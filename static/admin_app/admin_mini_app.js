@@ -440,25 +440,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function updateBasePrompt() {
-    const promptSelect = document.getElementById('base-prompt');
-    const customPromptText = document.getElementById('custom-prompt-text');
-    
-    if (!promptSelect) {
-        showNotification('Ошибка: элемент выбора промта не найден', 'error');
+    // Используем текущий промт из очереди
+    if (promptQueue.length === 0) {
+        showNotification('Ошибка: очередь промтов пуста', 'error');
         return;
     }
     
-    const selectedType = promptSelect.value;
-    let promptContent;
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const promptContent = basePrompts[currentPromptKey];
     
-    if (selectedType === 'custom') {
-        if (!customPromptText || !customPromptText.value.trim()) {
-            showNotification('Пожалуйста, введите пользовательский промт', 'warning');
-            return;
-        }
-        promptContent = customPromptText.value.trim();
-    } else {
-        promptContent = basePrompts[selectedType] || basePrompts.default;
+    if (!promptContent) {
+        showNotification('Ошибка: промт не найден', 'error');
+        return;
     }
     
     try {
@@ -468,7 +461,7 @@ async function updateBasePrompt() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                prompt_type: selectedType,
+                prompt_type: currentPromptKey,
                 prompt_content: promptContent
             })
         });
@@ -476,7 +469,7 @@ async function updateBasePrompt() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification(`Базовый промт "${selectedType}" успешно обновлен!`, 'success');
+            showNotification(`Базовый промт "${currentPromptKey}" успешно обновлен!`, 'success');
         } else {
             showNotification(data.message || 'Ошибка обновления промта', 'error');
         }
@@ -512,7 +505,6 @@ function nextPrompt() {
 // Функция для обновления предварительного просмотра промта
 function updatePromptPreview() {
     const promptText = document.getElementById('prompt-text');
-    const promptSelect = document.getElementById('base-prompt');
     
     if (promptText && promptQueue.length > 0) {
         const currentPromptKey = promptQueue[currentPromptIndex];
@@ -520,10 +512,6 @@ function updatePromptPreview() {
         
         if (currentPromptContent) {
             promptText.innerHTML = currentPromptContent.replace(/\n/g, '<br>');
-        }
-        
-        if (promptSelect) {
-            promptSelect.value = currentPromptKey;
         }
     }
 }
@@ -655,29 +643,8 @@ function addNewPrompt() {
 }
 
 function updatePromptSelect() {
-    const select = document.getElementById('base-prompt');
-    if (!select) return;
-    
-    // Сохраняем текущее значение
-    const currentValue = select.value;
-    
-    // Очищаем опции (кроме custom)
-    select.innerHTML = '<option value="custom">Пользовательский</option>';
-    
-    // Добавляем все промты
-    Object.entries(basePrompts).forEach(([key, content]) => {
-        const lines = content.split('\n');
-        const title = lines[0];
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = title;
-        select.appendChild(option);
-    });
-    
-    // Восстанавливаем значение
-    if (currentValue && basePrompts[currentValue]) {
-        select.value = currentValue;
-    }
+    // Функция больше не нужна, так как селект удален
+    // Оставляем пустой для совместимости
 }
 
 // Drag & Drop функции
