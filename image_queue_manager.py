@@ -40,7 +40,9 @@ class ImageQueueManager:
         self.requests: List[ImageRequest] = []
         self.batches: List[Batch] = []
         self.current_batch: Optional[Batch] = None
-        self.batch_size = 14  # Размер батча
+        self.min_batch_size = 1  # Минимальный размер батча (приоритетная обработка)
+        self.max_batch_size = 10  # Максимальный размер батча
+        self.batch_timeout = 120  # Таймаут батча в секундах (2 минуты)
         
     def add_request(self, user_id: int, username: str, first_name: str, message: str) -> str:
         """Добавляет новый запрос в очередь"""
@@ -62,37 +64,83 @@ class ImageQueueManager:
         
         return request_id
     
-    def _try_create_batch(self):
-        """Пытается создать новый батч из ожидающих запросов"""
+    def force_create_batch(self) -> bool:
+        """Принудительно создает батч из одного запроса (приоритетная обработка)"""
         pending_requests = [r for r in self.requests if r.status == "pending"]
         
-        if len(pending_requests) >= self.batch_size:
-            # Создаем батч из первых 14 запросов
-            batch_requests = pending_requests[:self.batch_size]
-            
-            batch_id = str(uuid.uuid4())
-            batch = Batch(
-                id=batch_id,
-                requests=batch_requests,
-                created_at=time.time()
-            )
-            
-            # Обновляем статус запросов
-            for request in batch_requests:
-                request.batch_id = batch_id
-                request.status = "in_batch"
-            
-            self.batches.append(batch)
-            print(f"🎯 Создан батч {batch_id} с {len(batch_requests)} запросами")
+        if not pending_requests:
+            return False
+        
+        # Берем самый старый запрос
+        oldest_request = min(pending_requests, key=lambda x: x.timestamp)
+        
+        batch_id = str(uuid.uuid4())
+        batch = Batch(
+            id=batch_id,
+            requests=[oldest_request],
+            created_at=time.time()
+        )
+        
+        # Обновляем статус запроса
+        oldest_request.batch_id = batch_id
+        oldest_request.status = "in_batch"
+        
+        self.batches.append(batch)
+        print(f"🚀 ПРИОРИТЕТ: Принудительно создан батч {batch_id} из 1 запроса")
+        return True
+    
+    def _try_create_batch(self):
+        """Пытается создать новый батч из ожидающих запросов с приоритетной системой"""
+        pending_requests = [r for r in self.requests if r.status == "pending"]
+        
+        if not pending_requests:
+            return
+        
+        # ПРИОРИТЕТНАЯ СИСТЕМА БАТЧИНГА:
+        # 1. Если есть 1+ запрос - создаем батч немедленно
+        # 2. Если есть старые запросы (старше таймаута) - создаем батч
+        # 3. Если накопилось много запросов - создаем максимальный батч
+        
+        current_time = time.time()
+        
+        # Проверяем, есть ли старые запросы (старше таймаута)
+        old_requests = [r for r in pending_requests if current_time - r.timestamp > self.batch_timeout]
+        
+        if old_requests:
+            # Создаем батч из старых запросов (приоритет!)
+            batch_requests = old_requests[:self.max_batch_size]
+            print(f"⚡ ПРИОРИТЕТ: Создаем батч из {len(batch_requests)} старых запросов (старше {self.batch_timeout}с)")
+        elif len(pending_requests) >= self.min_batch_size:
+            # Создаем батч из доступных запросов
+            batch_size = min(len(pending_requests), self.max_batch_size)
+            batch_requests = pending_requests[:batch_size]
+            print(f"🎯 Создаем батч из {len(batch_requests)} запросов (минимум {self.min_batch_size})")
+        else:
+            return  # Недостаточно запросов для создания батча
+        
+        batch_id = str(uuid.uuid4())
+        batch = Batch(
+            id=batch_id,
+            requests=batch_requests,
+            created_at=time.time()
+        )
+        
+        # Обновляем статус запросов
+        for request in batch_requests:
+            request.batch_id = batch_id
+            request.status = "in_batch"
+        
+        self.batches.append(batch)
+        print(f"✅ Батч {batch_id} создан с {len(batch_requests)} запросами")
     
     def get_next_batch(self) -> Optional[Batch]:
-        """Возвращает следующий батч для обработки"""
+        """Возвращает следующий батч для обработки с приоритетной системой"""
         if self.current_batch and self.current_batch.status == "processing":
             return None  # Текущий батч еще обрабатывается
         
-        # Ищем следующий pending батч
+        # Ищем следующий доступный батч (pending или in_batch)
         for batch in self.batches:
-            if batch.status == "pending":
+            if batch.status in ["pending", "in_batch"]:
                 self.current_batch = batch
                 return batch
         
@@ -170,7 +218,9 @@ class ImageQueueManager:
             "completed_batches": completed_batches,
             "failed_batches": failed_batches,
             "current_batch_id": self.current_batch.id if self.current_batch else None,
-            "batch_size": self.batch_size
+            "min_batch_size": self.min_batch_size,
+            "max_batch_size": self.max_batch_size,
+            "batch_timeout": self.batch_timeout
         }
     
     def get_current_batch(self) -> Optional[Batch]:

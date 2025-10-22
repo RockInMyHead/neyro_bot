@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ панель - Нейро-бот</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_app/admin_mini_app.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_app/admin_mini_app.css') }}?v=4">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
 </head>
 <body>
@@ -19,84 +19,78 @@
         <!-- Основной контент -->
         <main class="main-content">
 
-            <!-- Миксированный текст -->
+            <!-- NEW: Умная система батчей -->
             <div class="card">
-                <h2>🎭 Миксированный текст</h2>
-                <div class="mixed-text-container">
-                    <div class="mixed-text" id="mixed-text">
-                        Генерация миксированного текста каждые 15 секунд...
+                <h2>🚀 Умная система батчей</h2>
+                <div class="smart-batch-container">
+                    <div class="current-mixed-text">
+                        <h3>📝 Текущий миксированный текст</h3>
+                        <div class="mixed-text" id="current-mixed-text">
+                            Ожидание обработки...
+                        </div>
                     </div>
-                    <div class="mixed-text-time" id="mixed-text-time">
-                        Последнее обновление: никогда
+                    
+                    <div class="smart-batch-stats-container">
+                        <div class="stats-dropdown-header" onclick="toggleStatsDropdown()">
+                            <span id="stats-summary">Загрузка статистики...</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="stats-dropdown" id="stats-dropdown">
+                            <div class="smart-batch-stats" id="smart-batch-stats">
+                                Загрузка статистики...
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <button class="btn btn-secondary" onclick="generateMixedText()">🎭 Сгенерировать сейчас</button>
-            </div>
-
+                    
+                    <div class="batch-controls">
+                        <button id="create-batches-btn" class="btn btn-primary" onclick="forceCreateBatches()">🔄 Создать батчи</button>
+                        <button id="process-next-btn" class="btn btn-success" onclick="processNextBatch()">▶️ Обработать следующий</button>
+                        <button id="clear-messages-btn" class="btn btn-warning" onclick="clearAllMessages()">🗑️ Очистить сообщения</button>
+                    </div>
+                    
+               <div class="smart-batch-list-container">
+                   <h3>📊 Список батчей</h3>
+                   <div class="smart-batch-list" id="smart-batch-list">
+                       Загрузка списка батчей...
+                   </div>
+               </div>
+               
+               <div class="generated-images-container">
+                   <h3>🖼️ Сгенерированные изображения</h3>
+                   <div class="images-grid" id="images-grid">
+                       Загрузка изображений...
+                   </div>
+               </div>
+           </div>
+       </div>
+            
             <!-- Выбор базового промта -->
             <div class="card">
                 <h2>🎬 Базовые промты фильмов</h2>
-                <div class="prompt-selector">
-                    <div class="form-group">
-                        <label for="base-prompt"></label>
-                    </div>
-                    
-                    <div class="form-group" id="custom-prompt-group" style="display: none;">
-                        <label for="custom-prompt-text">Пользовательский промт:</label>
-                        <textarea id="custom-prompt-text" placeholder="Введите ваш промт..."></textarea>
+                <div class="prompt-manager">
+                    <div class="prompt-dropdown-container">
+                        <div class="prompt-dropdown-header" onclick="togglePromptDropdown()">
+                            <span id="current-prompt-title">Выберите промт...</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="prompt-dropdown" id="prompt-dropdown">
+                            <div class="prompt-list" id="prompt-list">
+                                <!-- Промты будут загружены через JavaScript -->
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="prompt-preview" id="prompt-preview">
                         <h4>Предварительный просмотр:</h4>
                         <div class="prompt-text" id="prompt-text">
-                            Пираты Карибского моря<br>
-                            Мрачный кинематографичный реализм во вселенной Пиратов карибского моря; деревянные корабли с парусами и пушками; пираты; морская дымка, контраст, рим-свет; палитра: сталь/свинец воды, изумруд/бирюза, мох, мокрое дерево, патина бронзы, янтарные блики; фактуры: соль на канатах, камень, рваная парусина, брызги; широкий план, масштаб, без крупных лиц.
+                            Выберите промт из списка выше
                         </div>
                     </div>
                     
                     <div class="prompt-controls">
                         <button class="btn btn-primary" onclick="updateBasePrompt()">🔄 Обновить промт</button>
                         <button class="btn btn-success" onclick="nextPrompt()">➡️ Далее</button>
-                    </div>
-                </div>
-                
-                <!-- Редактирование промтов -->
-                <div class="prompt-editor">
-                    <div class="prompt-list" id="prompt-list">
-                        <!-- Промты будут загружены динамически -->
-                    </div>
-                    <button class="btn btn-secondary" onclick="addNewPrompt()">➕ Добавить новый промт</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>🎨 Генерация изображения из микса</h2>
-                <div class="image-generator-container">
-                    <p class="image-info-text">
-                        Генерирует художественное изображение на основе миксированного текста из сообщений пользователей
-                    </p>
-                    <button class="btn btn-primary" onclick="generateImageFromMix()" id="generateImageBtn">
-                        🎨 Сгенерировать изображение
-                    </button>
-                    
-                    <div class="loading-container" id="imageLoading" style="display: none;">
-                        <div class="spinner"></div>
-                        <p>Генерируем изображение... Это может занять несколько секунд</p>
-                    </div>
-                    
-                    <div class="generated-image-result" id="generatedImageResult" style="display: none;">
-                        <div class="image-wrapper">
-                            <img id="generatedImage" class="generated-image" alt="Сгенерированное изображение">
-                        </div>
-                        <div class="image-details">
-                            <p><strong>Промпт:</strong> <span id="imagePrompt"></span></p>
-                            <p><strong>Размер файла:</strong> <span id="imageSize"></span></p>
-                            <p><strong>Время генерации:</strong> <span id="imageTime"></span></p>
-                        </div>
-                        <div class="image-actions">
-                            <button class="btn btn-success" onclick="downloadGeneratedImage()">⬇️ Скачать</button>
-                            <button class="btn btn-secondary" onclick="generateImageFromMix()">🔄 Сгенерировать новое</button>
-                        </div>
+                        <button class="btn btn-secondary" onclick="addNewPrompt()">➕ Добавить</button>
                     </div>
                 </div>
             </div>
@@ -176,6 +170,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=5"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=14"></script>
 </body>
 </html>

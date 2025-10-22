@@ -13,10 +13,16 @@ logger = logging.getLogger(__name__)
 # Import existing handlers
 from simple_message_db import message_db
 from openai_client import get_openai_response
-from image_queue_manager import queue_manager
-from batch_image_generator import batch_generator
 from gemini_client import generate_image_with_retry, GeminiQuotaError
 from content_filter import check_content_safety, sanitize_image_prompt
+
+# OLD: Keep legacy imports for compatibility with old endpoints
+from image_queue_manager import queue_manager
+from batch_image_generator import batch_generator
+
+# NEW: Import smart batch management system
+from smart_batch_manager import smart_batch_manager, BatchStatus
+from sequential_batch_processor import sequential_processor
 from PIL import Image, ImageOps
 from io import BytesIO
 import threading
@@ -24,39 +30,61 @@ import time
 import asyncio
 import requests
 import base64
-from config import BOT_TOKEN
+from config import BOT_TOKEN, GENERATED_IMAGES_FOLDER, NEW_BOT_TOKEN
 
 def auto_generation_worker():
-    """Фоновый процесс автоматической генерации изображений"""
-    logger.info("🔄 Автоматическая генерация изображений запущена (каждые 15 секунд)")
+    """
+    Новый фоновый процесс для последовательной обработки батчей
+    
+    Логика:
+    1. Проверяет наличие необработанных сообщений
+    2. Создает батчи (10 пропорциональных или по 1 сообщению)
+    3. Последовательно обрабатывает каждый батч:
+       - Создает миксированный текст через LLM
+       - Генерирует изображение
+       - Сохраняет результат
+    4. Повторяет цикл
+    """
+    logger.info("🚀 Новая система последовательной обработки батчей запущена")
     
     while True:
         try:
-            # Проверяем, есть ли готовые батчи для обработки
-            current_batch = queue_manager.get_current_batch()
-            if current_batch and current_batch.status == 'ready':
-                logger.info(f"🎨 Обработка батча {current_batch.id} с {len(current_batch.requests)} запросами")
-                
-                # Обрабатываем батч
-                success = asyncio.run(batch_generator.process_next_batch())
-                if success:
-                    logger.info(f"✅ Батч {current_batch.id} успешно обработан")
-                else:
-                    logger.warning(f"⚠️ Не удалось обработать батч {current_batch.id}")
-            else:
-                logger.debug("📭 Нет готовых батчей для обработки")
+            # Проверяем, есть ли необработанные сообщения
+            stats = smart_batch_manager.get_statistics()
             
-            # Ждем 15 секунд перед следующей проверкой
-            time.sleep(15)
+            if stats['total_messages'] > 0:
+                logger.info(f"📝 Обнаружено {stats['total_messages']} сообщений, создаем батчи...")
+                
+                # Создаем батчи из накопленных сообщений
+                created_batches = smart_batch_manager.create_batches()
+                
+                if created_batches:
+                    logger.info(f"✅ Создано {len(created_batches)} батчей")
+                    
+                    # Последовательно обрабатываем все батчи
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    try:
+                        result = loop.run_until_complete(sequential_processor.process_all_batches())
+                        logger.info(f"🎉 Обработка завершена: {result['processed']} успешно, {result['failed']} ошибок")
+                    finally:
+                        loop.close()
+            
+            # Очищаем старые завершенные батчи (старше 1 часа)
+            smart_batch_manager.clear_completed_batches(older_than_hours=1)
+            
+            # Проверяем очередь каждые 5 секунд
+            time.sleep(5)
             
         except Exception as e:
-            logger.error(f"❌ Ошибка в автоматической генерации: {e}")
-            time.sleep(30)  # При ошибке ждем дольше
+            logger.error(f"❌ Ошибка в фоновом процессе: {e}", exc_info=True)
+            time.sleep(10)  # При ошибке увеличиваем интервал
 
 def send_telegram_message(user_id, message):
     """Отправляет сообщение пользователю через Telegram Bot API"""
     try:
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{NEW_BOT_TOKEN}/sendMessage"
         data = {
             'chat_id': user_id,
             'text': message,
@@ -120,12 +148,12 @@ def api_message():
         )
         logger.info(f"Сообщение Mini App сохранено: user_id={user_id}, username={username}")
         
-        # Добавляем запрос в очередь генерации изображений
+        # NEW: Добавляем сообщение в систему умных батчей
         try:
-            req_id = queue_manager.add_request(user_id, username, first_name, message)
-            logger.info(f"Запрос добавлен в очередь генерации: {req_id}")
+            msg_id = smart_batch_manager.add_message(user_id, username, first_name, message)
+            logger.info(f"✅ Сообщение добавлено в SmartBatchManager: {msg_id}")
         except Exception as e:
-            logger.warning(f"Не удалось добавить запрос в очередь генерации: {e}")
+            logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
             
     except Exception as e:
         logger.warning(f"Не удалось сохранить сообщение Mini App: {e}")
@@ -174,8 +202,8 @@ def admin_stats():
 def admin_messages():
     message_db.load_messages()
     # Показываем только сообщения от Mini App (исключаем админские и бот)
-    all_user_msgs = message_db.get_user_messages_only(100)
-    msgs = [msg for msg in all_user_msgs if msg.get('source') == 'mini_app'][-15:]
+    all_user_msgs = message_db.get_user_messages_only(200)  # Увеличиваем лимит до 200 сообщений
+    msgs = [msg for msg in all_user_msgs if msg.get('source') == 'mini_app'][-50:]  # Показываем последние 50 сообщений
     response = jsonify(success=True, messages=msgs, count=len(msgs), timestamp=int(time.time()*1000))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -222,18 +250,44 @@ def admin_mixed_text():
         if not filtered_texts:
             mixed = 'Все сообщения содержат нежелательный контент и были отфильтрованы.'
         else:
-            prompt = f"Сообщения пользователей: {'; '.join(filtered_texts)}"
-            # Используем синхронный подход для вызова async функции
-            try:
-                # Создаем новый event loop для этого вызова
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                mixed = loop.run_until_complete(get_openai_response(prompt))
-                loop.close()
-            except RuntimeError as e:
-                logger.error(f"Ошибка event loop: {e}")
-                # Fallback: используем простой ответ
-                mixed = f"Обработано {len(filtered_texts)} сообщений пользователей."
+            # Создаем краткий усредненный промпт (до 100 символов)
+            if len(filtered_texts) == 1:
+                # Если только одно сообщение, используем его напрямую
+                single_text = filtered_texts[0]
+                mixed = single_text[:97] + "..." if len(single_text) > 100 else single_text
+            else:
+                # Для множественных сообщений создаем краткий усредненный промпт
+                prompt = f"""Создай краткий усредненный промпт (максимум 100 символов) из этих сообщений пользователей:
+
+Сообщения: {'; '.join(filtered_texts)}
+
+ТРЕБОВАНИЯ:
+- Максимум 100 символов
+- Объедини ключевые слова и образы
+- Используй только самые важные элементы
+- Пиши на русском языке
+- Создай единый краткий образ
+
+Пример: "Море, шторм, корабль, приключения" """
+                
+                # Используем синхронный подход для вызова async функции
+                try:
+                    # Создаем новый event loop для этого вызова
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    mixed = loop.run_until_complete(get_openai_response(prompt))
+                    loop.close()
+                    
+                    # Принудительно ограничиваем до 100 символов
+                    if len(mixed) > 100:
+                        mixed = mixed[:97] + "..."
+                        
+                except RuntimeError as e:
+                    logger.error(f"Ошибка event loop: {e}")
+                    # Fallback: простое объединение ключевых слов
+                    mixed = " ".join(filtered_texts[:3])  # Берем первые 3 сообщения
+                    if len(mixed) > 100:
+                        mixed = mixed[:97] + "..."
     
     response = jsonify(success=True, mixed_text=mixed, timestamp=int(time.time()*1000))
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -292,6 +346,170 @@ def admin_batch_status():
         resp.status_code = 500
     resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
+
+# ============================================================================
+# NEW: Smart Batch System Endpoints
+# ============================================================================
+
+@app.route('/api/admin/smart-batches/stats', methods=['GET'])
+def smart_batches_stats():
+    """Получает статистику умной системы батчей"""
+    try:
+        batch_stats = smart_batch_manager.get_statistics()
+        processor_stats = sequential_processor.get_stats()
+        
+        response = jsonify(
+            success=True,
+            batch_stats=batch_stats,
+            processor_stats=processor_stats,
+            timestamp=int(time.time() * 1000)
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка получения статистики батчей: {e}")
+        return jsonify(success=False, error=str(e)), 500
+
+@app.route('/api/admin/smart-batches/list', methods=['GET'])
+def smart_batches_list():
+    """Получает список всех батчей"""
+    try:
+        batches = smart_batch_manager.get_all_batches_info()
+        
+        response = jsonify(
+            success=True,
+            batches=batches,
+            count=len(batches),
+            timestamp=int(time.time() * 1000)
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка получения списка батчей: {e}")
+        return jsonify(success=False, error=str(e)), 500
+
+@app.route('/api/admin/smart-batches/create', methods=['POST'])
+def smart_batches_create():
+    """Принудительно создает батчи из накопленных сообщений"""
+    try:
+        created_batches = smart_batch_manager.create_batches()
+        
+        response = jsonify(
+            success=True,
+            message=f'Создано {len(created_batches)} батчей',
+            batches_created=len(created_batches),
+            timestamp=int(time.time() * 1000)
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка создания батчей: {e}")
+        return jsonify(success=False, error=str(e)), 500
+
+@app.route('/api/admin/smart-batches/process-next', methods=['POST'])
+def smart_batches_process_next():
+    """Обрабатывает следующий батч"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            success = loop.run_until_complete(sequential_processor.process_next_batch())
+            
+            response = jsonify(
+                success=success,
+                message='Батч обработан успешно' if success else 'Нет доступных батчей',
+                timestamp=int(time.time() * 1000)
+            )
+        finally:
+            loop.close()
+        
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка обработки батча: {e}")
+        return jsonify(success=False, error=str(e)), 500
+
+@app.route('/api/admin/smart-batches/current-mixed-text', methods=['GET'])
+def smart_batches_current_mixed_text():
+    """Получает миксированный текст последнего обработанного батча"""
+    try:
+        batches = smart_batch_manager.get_all_batches_info()
+        
+        # Ищем последний батч с миксированным текстом
+        mixed_text = None
+        for batch in reversed(batches):
+            if batch.get('mixed_text'):
+                mixed_text = batch['mixed_text']
+                break
+        
+        if not mixed_text:
+            mixed_text = 'Нет миксированного текста'
+        
+        response = jsonify(
+            success=True,
+            mixed_text=mixed_text,
+            timestamp=int(time.time() * 1000)
+        )
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except Exception as e:
+        logger.error(f"Ошибка получения миксированного текста: {e}")
+        return jsonify(success=False, error=str(e)), 500
+
+@app.route('/api/admin/smart-batches/images', methods=['GET'])
+def smart_batches_images():
+    """Получить список сгенерированных изображений"""
+    try:
+        batches = smart_batch_manager.get_all_batches_info()
+        completed_batches = [b for b in batches if b['status'] == 'completed' and b.get('image_path')]
+        
+        # Сортируем по времени завершения (новые сначала)
+        completed_batches.sort(key=lambda x: x.get('completed_at', 0), reverse=True)
+        
+        images_data = []
+        for batch in completed_batches:
+            image_path = batch.get('image_path')
+            if image_path and os.path.exists(image_path):
+                # Создаем URL для изображения
+                image_url = f"/static/generated_images/{os.path.basename(image_path)}"
+                images_data.append({
+                    'batch_id': batch['id'],
+                    'mixed_text': batch.get('mixed_text', ''),
+                    'image_url': image_url,
+                    'image_path': image_path,
+                    'completed_at': batch.get('completed_at'),
+                    'processing_time': batch.get('processing_time', 0),
+                    'message_count': batch.get('message_count', 0)
+                })
+        
+        response = jsonify({
+            'success': True,
+            'images': images_data,
+            'count': len(images_data),
+            'timestamp': int(time.time() * 1000)
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения изображений: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': int(time.time() * 1000)
+        }), 500
+
+# ============================================================================
+
+@app.route('/static/generated_images/<filename>')
+def serve_generated_image(filename):
+    """Служит сгенерированные изображения"""
+    try:
+        return send_from_directory(GENERATED_IMAGES_FOLDER, filename)
+    except Exception as e:
+        logger.error(f"Ошибка загрузки изображения {filename}: {e}")
+        return "Image not found", 404
 
 @app.route('/api/admin/latest-track', methods=['GET'])
 def admin_latest_track():
@@ -435,6 +653,56 @@ def admin_generate_content():
         logger.error(f"Ошибка генерации контента: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+@app.route('/api/admin/clear-messages', methods=['POST'])
+def admin_clear_messages():
+    """Очищает все сообщения из базы данных"""
+    try:
+        logger.info("Запрос на очистку всех сообщений")
+        
+        # Очищаем все сообщения
+        message_db.clear_all_messages()
+        
+        logger.info("Все сообщения успешно очищены")
+        
+        return jsonify({
+            "success": True,
+            "message": "Все сообщения успешно очищены",
+            "timestamp": int(time.time() * 1000)
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка очистки сообщений: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Ошибка очистки сообщений: {str(e)}",
+            "timestamp": int(time.time() * 1000)
+        }), 500
+
+@app.route('/api/mini-app/latest-message', methods=['GET'])
+def get_latest_message():
+    """Получает последнее сообщение для отображения в mini_app"""
+    try:
+        # Получаем последнее сообщение от админа
+        message_db.load_messages()
+        admin_messages = [msg for msg in message_db.messages if msg.get('source') == 'admin']
+        
+        if admin_messages:
+            latest_message = max(admin_messages, key=lambda x: x.get('timestamp', 0))
+            return jsonify({
+                "success": True,
+                "message": latest_message.get('message', ''),
+                "timestamp": latest_message.get('timestamp', 0)
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "message": "",
+                "timestamp": 0
+            })
+    except Exception as e:
+        logger.error(f"Ошибка получения последнего сообщения: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/api/admin/send-concert-message', methods=['POST'])
 def admin_send_concert_message():
     """Отправляет концертное сообщение в чат"""
@@ -502,7 +770,8 @@ P.S. Ответы анонимны."""
             
             for msg in all_messages:
                 logger.info(f"Сообщение: source={msg.get('source')}, user_id={msg.get('user_id')}")
-                if msg.get('source') == 'mini_app' and msg.get('user_id') and msg.get('user_id') != 0:
+                if msg.get('source') == 'mini_app' and msg.get('user_id') is not None:
+                    # Включаем пользователей с user_id = 0 для локальной разработки
                     mini_app_users.add(msg['user_id'])
             
             logger.info(f"Найдено {len(mini_app_users)} пользователей Mini App для отправки сообщения")
@@ -512,6 +781,13 @@ P.S. Ответы анонимны."""
             for user_id in mini_app_users:
                 try:
                     logger.info(f"Отправка сообщения пользователю {user_id}")
+                    
+                    # Если user_id = 0, это локальная разработка - пропускаем отправку
+                    if user_id == 0:
+                        logger.info(f"Пропускаем отправку для user_id = 0 (локальная разработка)")
+                        sent_count += 1  # Считаем как успешную отправку
+                        continue
+                    
                     success = send_telegram_message(user_id, message)
                     if success:
                         sent_count += 1
@@ -542,7 +818,8 @@ P.S. Ответы анонимны."""
             "success": True, 
             "message": f"Сообщение типа '{message_type}' отправлено {sent_count} пользователям",
             "sent_count": sent_count,
-            "failed_count": failed_count
+            "failed_count": failed_count,
+            "total_users": len(mini_app_users)
         })
         
     except Exception as e:

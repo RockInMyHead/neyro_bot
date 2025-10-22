@@ -208,8 +208,31 @@ body {
 }
 
 .btn-warning {
-    background: #ffc107;
-    color: #212529;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.btn-warning:active {
+    transform: translateY(0);
+}
+
+.btn-warning:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Очередь генерации изображений */
@@ -980,4 +1003,646 @@ body {
 
 .drop-indicator.active {
     opacity: 1;
+}
+
+/* ============================================================================
+   NEW: Smart Batch System Styles
+   ============================================================================ */
+
+.smart-batch-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.current-mixed-text {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.current-mixed-text h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.current-mixed-text .mixed-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #667eea;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Стили для выпадающего списка статистики */
+.smart-batch-stats-container {
+    margin-bottom: 20px;
+}
+
+.stats-dropdown-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.stats-dropdown-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.stats-dropdown-header.active {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.stats-dropdown-header .dropdown-arrow {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.stats-dropdown-header.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.stats-dropdown {
+    background: white;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+}
+
+.stats-dropdown.active {
+    max-height: 500px;
+}
+
+.stats-dropdown .smart-batch-stats {
+    padding: 20px;
+    margin: 0;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .stats-dropdown-header {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+    
+    .stats-dropdown .smart-batch-stats {
+        padding: 15px;
+    }
+}
+
+.smart-batch-stats {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 12px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-value.pending {
+    color: #FF9800;
+}
+
+.stat-value.processing {
+    color: #2196F3;
+}
+
+.stat-value.mixed {
+    color: #9C27B0;
+}
+
+.stat-value.generating {
+    color: #673AB7;
+}
+
+.stat-value.completed {
+    color: #4CAF50;
+}
+
+.stat-value.failed {
+    color: #F44336;
+}
+
+.processor-stats {
+    padding: 12px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.processor-stats p {
+    margin: 5px 0;
+}
+
+.batch-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.batch-controls button {
+    flex: 1;
+    min-width: 200px;
+}
+
+.smart-batch-list-container {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+}
+
+.smart-batch-list-container h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #333;
+}
+
+.smart-batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.no-batches {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+}
+
+.batch-item {
+    padding: 15px;
+    border-radius: 8px;
+    background: white;
+    border-left: 4px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.batch-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.batch-item.status-pending {
+    border-left-color: #FF9800;
+}
+
+.batch-item.status-processing {
+    border-left-color: #2196F3;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.batch-item.status-mixed {
+    border-left-color: #9C27B0;
+}
+
+.batch-item.status-generating {
+    border-left-color: #673AB7;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.batch-item.status-completed {
+    border-left-color: #4CAF50;
+}
+
+.batch-item.status-failed {
+    border-left-color: #F44336;
+}
+
+.batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.batch-id {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+.batch-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.batch-status.status-pending {
+    background: #FFF3E0;
+    color: #F57C00;
+}
+
+.batch-status.status-processing {
+    background: #E3F2FD;
+    color: #1976D2;
+}
+
+.batch-status.status-mixed {
+    background: #F3E5F5;
+    color: #7B1FA2;
+}
+
+.batch-status.status-generating {
+    background: #EDE7F6;
+    color: #512DA8;
+}
+
+.batch-status.status-completed {
+    background: #E8F5E9;
+    color: #388E3C;
+}
+
+.batch-status.status-failed {
+    background: #FFEBEE;
+    color: #D32F2F;
+}
+
+.batch-details {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.batch-details p {
+    margin: 5px 0;
+}
+
+.batch-details strong {
+    color: #666;
+}
+
+.batch-details .error {
+    color: #F44336;
+    background: #FFEBEE;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Стили для карточек изображений */
+.generated-images-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.image-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.image-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.image-card-content {
+    padding: 12px;
+}
+
+.image-card-title {
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+    color: #333;
+    line-height: 1.3;
+}
+
+.image-card-meta {
+    font-size: 0.8em;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.image-card-time {
+    font-family: monospace;
+}
+
+.image-card-stats {
+    display: flex;
+    gap: 8px;
+    font-size: 0.75em;
+}
+
+.image-card-stat {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #666;
+}
+
+.image-card-stat.messages {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.image-card-stat.time {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Стили для менеджера промтов */
+.prompt-manager {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.prompt-dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.prompt-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.prompt-dropdown-header:hover {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.prompt-dropdown-header.active {
+    border-color: #007bff;
+    background: #e3f2fd;
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+    font-size: 12px;
+    color: #666;
+}
+
+.prompt-dropdown-header.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.prompt-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.prompt-dropdown.active {
+    display: block;
+}
+
+.prompt-list {
+    padding: 8px 0;
+}
+
+.prompt-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
+}
+
+.prompt-item:hover {
+    background-color: #f8f9fa;
+}
+
+.prompt-item:last-child {
+    border-bottom: none;
+}
+
+.prompt-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.prompt-item.drag-over {
+    border-top: 2px solid #007bff;
+}
+
+.prompt-drag-handle {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    cursor: grab;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt-drag-handle:active {
+    cursor: grabbing;
+}
+
+.prompt-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.prompt-item-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.prompt-item-description {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.prompt-item-duration {
+    font-size: 11px;
+    color: #007bff;
+    font-weight: 600;
+    margin-top: 4px;
+    padding: 2px 6px;
+    background: #e3f2fd;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.prompt-item-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.prompt-item:hover .prompt-item-actions {
+    opacity: 1;
+}
+
+.prompt-action-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.prompt-action-btn:hover {
+    background: #e9ecef;
+    transform: scale(1.1);
+}
+
+.prompt-action-btn.edit {
+    color: #007bff;
+}
+
+.prompt-action-btn.delete {
+    color: #dc3545;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .image-card img {
+        height: 120px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .batch-controls {
+        flex-direction: column;
+    }
+    
+    .batch-controls button {
+        width: 100%;
+    }
+    
+    .prompt-dropdown {
+        max-height: 250px;
+    }
+    
+    .prompt-item {
+        padding: 10px 12px;
+    }
+    
+    .prompt-item-title {
+        font-size: 13px;
+    }
+    
+    .prompt-item-description {
+        font-size: 11px;
+    }
 }

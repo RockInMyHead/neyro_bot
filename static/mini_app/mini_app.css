@@ -272,21 +272,29 @@ body {
 
 /* Custom Scrollbar */
 .chat-messages::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .chat-messages::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-    background: var(--accent-primary);
-    border-radius: 3px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-secondary);
+    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Firefox scrollbar support */
+.chat-messages {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary) rgba(255, 255, 255, 0.1);
 }
 
 /* Messages */

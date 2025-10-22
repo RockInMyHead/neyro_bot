@@ -228,6 +228,41 @@ document.addEventListener('DOMContentLoaded', function() {
 // Чат функциональность
 let chatHistory = [];
 
+// Включение блока ввода сообщений
+function enableChatInput() {
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.querySelector('.chat-send-btn');
+    
+    if (chatInput) {
+        chatInput.disabled = false;
+        chatInput.placeholder = 'Напишите сообщение...';
+        chatInput.focus();
+    }
+    
+    if (sendBtn) {
+        sendBtn.disabled = false;
+    }
+    
+    console.log('Блок ввода сообщений включен');
+}
+
+// Отключение блока ввода сообщений
+function disableChatInput() {
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.querySelector('.chat-send-btn');
+    
+    if (chatInput) {
+        chatInput.disabled = true;
+        chatInput.placeholder = '';
+    }
+    
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+    
+    console.log('Блок ввода сообщений отключен');
+}
+
 // Добавление сообщения в чат
 function addMessageToChat(message, isUser = false, timestamp = null) {
     const chatMessages = document.getElementById('chat-messages');
@@ -258,6 +293,11 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     if (chatHistory.length > 50) {
         chatHistory = chatHistory.slice(-50);
     }
+    
+    // Если это сообщение от бота (не от пользователя), включаем блок ввода
+    if (!isUser) {
+        enableChatInput();
+    }
 }
 
 // Отправка сообщения в чат
@@ -265,9 +305,8 @@ async function sendChatMessage() {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.querySelector('.chat-send-btn');
     
-    // Disable input until next admin message
-    if (chatInput) chatInput.disabled = true;
-    if (sendBtn) sendBtn.disabled = true;
+    // Отключаем блок ввода до получения ответа
+    disableChatInput();
     
     // Existing logic to add user message and send to API
     const message = chatInput.value.trim();
@@ -309,6 +348,9 @@ function removeTypingIndicator() {
     if (typingIndicator) {
         typingIndicator.remove();
     }
+    
+    // Включаем блок ввода после удаления индикатора печати
+    enableChatInput();
 }
 
 // Отправка сообщения боту через OpenAI API
@@ -461,15 +503,62 @@ function handleChatKeyPress(event) {
     }
 }
 
+// Переменные для отслеживания сообщений
+let lastMessageTimestamp = 0;
+let isInitialized = false;
+
+// Функция для получения последнего сообщения от админа
+async function getLatestMessage() {
+    try {
+        const response = await fetch('/api/mini-app/latest-message');
+        const data = await response.json();
+        
+        if (data.success && data.message && data.timestamp) {
+            // При первой инициализации просто запоминаем timestamp, не показываем сообщение
+            if (!isInitialized) {
+                lastMessageTimestamp = data.timestamp;
+                isInitialized = true;
+                console.log('Инициализирован timestamp последнего сообщения:', lastMessageTimestamp);
+                return;
+            }
+            
+            // Проверяем, не получали ли мы уже это сообщение
+            if (data.timestamp > lastMessageTimestamp) {
+                // Добавляем сообщение в чат
+                addMessageToChat(data.message, 'bot');
+                
+                // Активируем блок ввода после получения сообщения от админа
+                enableChatInput();
+                
+                // Обновляем timestamp последнего сообщения
+                lastMessageTimestamp = data.timestamp;
+                
+                console.log('Получено новое сообщение от админа:', data.message);
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка получения последнего сообщения:', error);
+    }
+}
+
+// Функция для периодической проверки новых сообщений
+function startMessagePolling() {
+    // Проверяем каждые 5 секунд
+    setInterval(getLatestMessage, 5000);
+}
+
 // Инициализация чата
 function initChat() {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {
         chatInput.addEventListener('keypress', handleChatKeyPress);
         
-        // Автофокус на поле ввода
-        chatInput.focus();
-    }
+    // Изначально отключаем блок ввода до первого ответа от бота
+    disableChatInput();
+    
+    // Запускаем проверку новых сообщений от админа
+    startMessagePolling();
+}
     
     // Первое сообщение уже есть в HTML, не добавляем дублирующее
 }
@@ -478,3 +567,5 @@ function initChat() {
 window.sendMessage = sendMessage;
 window.sendChatMessage = sendChatMessage;
 window.handleBotData = handleBotData;
+window.enableChatInput = enableChatInput;
+window.disableChatInput = disableChatInput;

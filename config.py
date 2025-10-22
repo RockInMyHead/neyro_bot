@@ -7,6 +7,9 @@ load_dotenv()
 # Токен бота
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8394487624:AAEUTsqaRtXsCBW2B3mqeu8HaC1zpE2ocow")
 
+# Токен нового бота для отправки сообщений
+NEW_BOT_TOKEN = os.getenv("NEW_BOT_TOKEN", "8394487624:AAEUTsqaRtXsCBW2B3mqeu8HaC1zpE2ocow")
+
 # OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "YOUR_OPENAI_API_KEY_HERE")
 

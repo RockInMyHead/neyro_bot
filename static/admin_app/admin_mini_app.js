@@ -3,7 +3,7 @@ let tg = null;
 let updateInterval = null;
 
 // Переменные для системы очереди промтов
-let currentPromptIndex = 0;
+let legacyPromptIndex = 0;
 let promptQueue = [];
 let isEditing = false;
 
@@ -39,8 +39,13 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadInitialData() {
     try {
         await refreshMessages();
-        await generateMixedText();
         initializePromptQueue();
+        
+        // NEW: Запускаем автообновление умной системы батчей
+        startSmartBatchAutoUpdate();
+        
+        // Инициализируем промты
+        initializePrompts();
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
     }
@@ -50,7 +55,7 @@ async function loadInitialData() {
 function initializePromptQueue() {
     // Создаем очередь из всех доступных промтов
     promptQueue = Object.keys(basePrompts).filter(key => key !== 'custom');
-    currentPromptIndex = 0;
+    legacyPromptIndex = 0;
     
     // Загружаем список промтов
     loadPromptList();
@@ -63,7 +68,6 @@ function startAutoUpdate() {
     updateInterval = setInterval(async () => {
         try {
             await refreshMessages();
-            await generateMixedText();
         } catch (error) {
             console.error('Ошибка автообновления:', error);
         }
@@ -122,38 +126,6 @@ function updateMessagesDisplay(messages) {
             <div class="message-source">Источник: ${msg.source}</div>
         </div>
     `).join('');
-}
-
-// Генерация миксированного текста
-async function generateMixedText() {
-    try {
-        const response = await fetch('/api/admin/mixed-text', {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            updateMixedTextDisplay(data.mixed_text);
-        } else {
-            throw new Error(data.error || 'Ошибка генерации миксированного текста');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка генерации миксированного текста:', error);
-        showNotification('Ошибка генерации миксированного текста', 'error');
-    }
-}
-
-// Обновление отображения миксированного текста
-function updateMixedTextDisplay(mixedText) {
-    document.getElementById('mixed-text').textContent = mixedText;
-    document.getElementById('mixed-text-time').textContent = 
-        `Последнее обновление: ${new Date().toLocaleTimeString()}`;
 }
 
 // Сброс статистики
@@ -285,101 +257,6 @@ if (Telegram.WebApp) {
     });
 }
 
-// Генерация изображения из микса
-let currentImageData = null;
-
-async function generateImageFromMix() {
-    const btn = document.getElementById('generateImageBtn');
-    const loading = document.getElementById('imageLoading');
-    const result = document.getElementById('generatedImageResult');
-    
-    try {
-        // Показываем загрузку
-        btn.disabled = true;
-        loading.style.display = 'block';
-        result.style.display = 'none';
-        
-        const startTime = Date.now();
-        
-        const response = await fetch('/api/admin/generate-image', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({})
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            const generationTime = ((Date.now() - startTime) / 1000).toFixed(1);
-            
-            // Сохраняем данные для скачивания
-            currentImageData = data;
-            
-            // Отображаем изображение по пути
-            const img = document.getElementById('generatedImage');
-            img.src = data.filepath;
-            
-            // Отображаем детали
-            document.getElementById('imagePrompt').textContent = data.prompt;
-            document.getElementById('imageSize').textContent = formatFileSize(data.file_size);
-            document.getElementById('imageTime').textContent = `${generationTime}с`;
-            
-            // Показываем результат
-            result.style.display = 'block';
-            
-            showNotification('Изображение успешно сгенерировано!', 'success');
-        } else {
-            throw new Error(data.error || 'Ошибка генерации изображения');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка генерации изображения:', error);
-        showNotification(`Ошибка: ${error.message}`, 'error');
-    } finally {
-        btn.disabled = false;
-        loading.style.display = 'none';
-    }
-}
-
-// Скачивание сгенерированного изображения
-function downloadGeneratedImage() {
-    if (!currentImageData) {
-        showNotification('Нет изображения для скачивания', 'error');
-        return;
-    }
-    
-    try {
-        // Создаем ссылку для скачивания
-        const link = document.createElement('a');
-        link.href = currentImageData.filepath;
-        link.download = currentImageData.filename || `generated_${Date.now()}.png`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Изображение скачано', 'success');
-    } catch (error) {
-        console.error('Ошибка скачивания:', error);
-        showNotification('Ошибка скачивания изображения', 'error');
-    }
-}
-
-// Форматирование размера файла
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-}
-
 // ===== ФУНКЦИИ УПРАВЛЕНИЯ БАЗОВЫМИ ПРОМТАМИ =====
 
 // Базовые промты фильмов
@@ -448,7 +325,7 @@ async function updateBasePrompt() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const promptContent = basePrompts[currentPromptKey];
     
     if (!promptContent) {
@@ -489,12 +366,12 @@ function nextPrompt() {
     }
     
     // Перемещаем текущий промт в конец очереди
-    const currentPrompt = promptQueue[currentPromptIndex];
-    promptQueue.splice(currentPromptIndex, 1);
+    const currentPrompt = promptQueue[legacyPromptIndex];
+    promptQueue.splice(legacyPromptIndex, 1);
     promptQueue.push(currentPrompt);
     
     // Обновляем индекс (остается 0, так как следующий промт теперь первый)
-    currentPromptIndex = 0;
+    legacyPromptIndex = 0;
     
     // Обновляем отображение
     loadPromptList();
@@ -511,7 +388,7 @@ function updatePromptPreview() {
     const promptText = document.getElementById('prompt-text');
     
     if (promptText && promptQueue.length > 0) {
-        const currentPromptKey = promptQueue[currentPromptIndex];
+        const currentPromptKey = promptQueue[legacyPromptIndex];
         const currentPromptContent = basePrompts[currentPromptKey];
         
         if (currentPromptContent) {
@@ -529,7 +406,7 @@ function loadPromptList() {
     
     // Создаем элементы для каждого промта в порядке очереди
     promptQueue.forEach((key, index) => {
-        const promptItem = createPromptItem(key, basePrompts[key], index === currentPromptIndex, index);
+        const promptItem = createPromptItem(key, basePrompts[key], index === legacyPromptIndex, index);
         promptList.appendChild(promptItem);
     });
 }
@@ -690,10 +567,10 @@ function handleDrop(e) {
         promptQueue.splice(dropIndex, 0, draggedKey);
         
         // Обновляем индекс текущего промта
-        if (draggedIndex === currentPromptIndex) {
-            currentPromptIndex = dropIndex;
-        } else if (dropIndex === currentPromptIndex) {
-            currentPromptIndex = draggedIndex;
+        if (draggedIndex === legacyPromptIndex) {
+            legacyPromptIndex = dropIndex;
+        } else if (dropIndex === legacyPromptIndex) {
+            legacyPromptIndex = draggedIndex;
         }
         
         // Перезагружаем список
@@ -846,7 +723,7 @@ async function generateConcertContent() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     
     console.log('📝 Текущий промт:', currentPromptKey, currentPromptContent?.substring(0, 100));
@@ -953,7 +830,7 @@ async function generateMovieTitle() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     
     if (!currentPromptContent) {
@@ -995,7 +872,7 @@ async function generateMovieDescription() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     const movieTitle = document.getElementById('movie-title').value;
     
@@ -1038,7 +915,7 @@ async function generateMovieActors() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     const movieTitle = document.getElementById('movie-title').value;
     
@@ -1081,7 +958,7 @@ async function generateAIComment() {
         return;
     }
     
-    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptKey = promptQueue[legacyPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     
     if (!currentPromptContent) {
@@ -1285,11 +1162,8 @@ async function sendConcertEnd() {
 
 
 window.refreshMessages = refreshMessages;
-window.generateMixedText = generateMixedText;
 window.resetStats = resetStats;
 window.exportData = exportData;
-window.generateImageFromMix = generateImageFromMix;
-window.downloadGeneratedImage = downloadGeneratedImage;
 window.updateBasePrompt = updateBasePrompt;
 window.loadPromptList = loadPromptList;
 window.editPrompt = editPrompt;
@@ -1313,3 +1187,798 @@ window.updatePromptTitle = updatePromptTitle;
 window.toggleEdit = toggleEdit;
 window.saveAllEdits = saveAllEdits;
 window.cancelAllEdits = cancelAllEdits;
+
+// ============================================================================
+// NEW: Smart Batch System Functions
+// ============================================================================
+
+// Загрузка статистики умных батчей
+async function loadSmartBatchStats() {
+    try {
+        const response = await fetch('/api/admin/smart-batches/stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateSmartBatchStatsDisplay(data.batch_stats, data.processor_stats);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки статистики батчей:', error);
+    }
+}
+
+// Переменные для управления выпадающим списком статистики
+let isStatsDropdownOpen = false;
+
+// Переключение выпадающего списка статистики
+function toggleStatsDropdown() {
+    const dropdown = document.getElementById('stats-dropdown');
+    const header = document.querySelector('.stats-dropdown-header');
+    
+    isStatsDropdownOpen = !isStatsDropdownOpen;
+    
+    if (isStatsDropdownOpen) {
+        dropdown.classList.add('active');
+        header.classList.add('active');
+        
+        setTimeout(() => {
+            document.addEventListener('click', closeStatsDropdownOnOutsideClick);
+        }, 100);
+    } else {
+        dropdown.classList.remove('active');
+        header.classList.remove('active');
+        document.removeEventListener('click', closeStatsDropdownOnOutsideClick);
+    }
+}
+
+// Закрытие выпадающего списка статистики при клике вне его
+function closeStatsDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById('stats-dropdown');
+    const header = document.querySelector('.stats-dropdown-header');
+    
+    if (!dropdown.contains(event.target) && !header.contains(event.target)) {
+        dropdown.classList.remove('active');
+        header.classList.remove('active');
+        isStatsDropdownOpen = false;
+        document.removeEventListener('click', closeStatsDropdownOnOutsideClick);
+    }
+}
+
+// Обновление отображения статистики
+function updateSmartBatchStatsDisplay(batchStats, processorStats) {
+    const statsContainer = document.getElementById('smart-batch-stats');
+    const statsSummary = document.getElementById('stats-summary');
+    
+    if (!statsContainer) return;
+    
+    // Обновляем заголовок выпадающего списка
+    if (statsSummary) {
+        statsSummary.textContent = `📊 Сообщений: ${batchStats.total_messages} | Батчей: ${batchStats.total_batches} | Завершено: ${batchStats.completed_batches}`;
+    }
+    
+    const html = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Сообщений в очереди</div>
+                <div class="stat-value">${batchStats.total_messages}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Всего батчей</div>
+                <div class="stat-value">${batchStats.total_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Ожидают обработки</div>
+                <div class="stat-value pending">${batchStats.pending_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">В обработке</div>
+                <div class="stat-value processing">${batchStats.processing_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">С миксом</div>
+                <div class="stat-value mixed">${batchStats.mixed_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Генерация</div>
+                <div class="stat-value generating">${batchStats.generating_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Завершено</div>
+                <div class="stat-value completed">${batchStats.completed_batches}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Ошибки</div>
+                <div class="stat-value failed">${batchStats.failed_batches}</div>
+            </div>
+        </div>
+        <div class="processor-stats">
+            <p>📊 Обработано: ${processorStats.total_processed} | Ошибок: ${processorStats.total_failed}</p>
+            <p>🖼️ Изображений сгенерировано: ${processorStats.total_images_generated}</p>
+            <p>⏱️ Среднее время обработки: ${processorStats.average_processing_time.toFixed(2)}s</p>
+            <p>🔄 Статус: ${processorStats.is_processing ? '🟢 Обрабатывается' : '⚪ Ожидание'}</p>
+        </div>
+    `;
+    
+    statsContainer.innerHTML = html;
+}
+
+// Загрузка списка батчей
+async function loadSmartBatchList() {
+    try {
+        const response = await fetch('/api/admin/smart-batches/list');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateSmartBatchListDisplay(data.batches);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки списка батчей:', error);
+    }
+}
+
+// Обновление отображения списка батчей
+function updateSmartBatchListDisplay(batches) {
+    const listContainer = document.getElementById('smart-batch-list');
+    if (!listContainer) return;
+    
+    if (batches.length === 0) {
+        listContainer.innerHTML = '<p class="no-batches">Нет доступных батчей</p>';
+        return;
+    }
+    
+    const html = batches.map(batch => `
+        <div class="batch-item status-${batch.status}">
+            <div class="batch-header">
+                <span class="batch-id">Батч ${batch.id.substring(0, 8)}</span>
+                <span class="batch-status status-${batch.status}">${getStatusText(batch.status)}</span>
+            </div>
+            <div class="batch-details">
+                <p><strong>Сообщений:</strong> ${batch.message_count}</p>
+                ${batch.mixed_text ? `<p><strong>Микс:</strong> ${batch.mixed_text}</p>` : ''}
+                ${batch.image_path ? `<p><strong>Изображение:</strong> ${batch.image_path}</p>` : ''}
+                ${batch.processing_time ? `<p><strong>Время:</strong> ${batch.processing_time.toFixed(2)}s</p>` : ''}
+                ${batch.error_message ? `<p class="error"><strong>Ошибка:</strong> ${batch.error_message}</p>` : ''}
+            </div>
+        </div>
+    `).join('');
+    
+    listContainer.innerHTML = html;
+}
+
+// Получение текста статуса
+function getStatusText(status) {
+    const statusMap = {
+        'pending': '⏳ Ожидает',
+        'processing': '⚙️ Обработка',
+        'mixed': '🎭 Микс готов',
+        'generating': '🎨 Генерация',
+        'completed': '✅ Завершено',
+        'failed': '❌ Ошибка'
+    };
+    return statusMap[status] || status;
+}
+
+// Принудительное создание батчей
+async function forceCreateBatches() {
+    try {
+        const button = document.getElementById('create-batches-btn');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Создание...';
+        }
+        
+        const response = await fetch('/api/admin/smart-batches/create', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`Создано ${data.batches_created} батчей`, 'success');
+            await loadSmartBatchStats();
+            await loadSmartBatchList();
+        } else {
+            showNotification(data.error || 'Ошибка создания батчей', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка создания батчей:', error);
+        showNotification('Ошибка создания батчей', 'error');
+    } finally {
+        const button = document.getElementById('create-batches-btn');
+        if (button) {
+            button.disabled = false;
+            button.textContent = '🔄 Создать батчи';
+        }
+    }
+}
+
+// Обработка следующего батча
+async function processNextBatch() {
+    try {
+        const button = document.getElementById('process-next-btn');
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Обработка...';
+        }
+        
+        const response = await fetch('/api/admin/smart-batches/process-next', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            await loadSmartBatchStats();
+            await loadSmartBatchList();
+            await loadCurrentMixedText();
+        } else {
+            showNotification(data.message || 'Нет доступных батчей', 'warning');
+        }
+    } catch (error) {
+        console.error('Ошибка обработки батча:', error);
+        showNotification('Ошибка обработки батча', 'error');
+    } finally {
+        const button = document.getElementById('process-next-btn');
+        if (button) {
+            button.disabled = false;
+            button.textContent = '▶️ Обработать следующий';
+        }
+    }
+}
+
+// Загрузка текущего миксированного текста
+async function loadCurrentMixedText() {
+    try {
+        const response = await fetch('/api/admin/smart-batches/current-mixed-text');
+        const data = await response.json();
+        
+        if (data.success) {
+            const mixedTextElement = document.getElementById('current-mixed-text');
+            if (mixedTextElement) {
+                mixedTextElement.textContent = data.mixed_text;
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки миксированного текста:', error);
+    }
+}
+
+// Автообновление для умных батчей
+function startSmartBatchAutoUpdate() {
+    // Загружаем данные сразу
+    loadSmartBatchStats();
+    loadSmartBatchList();
+    loadCurrentMixedText();
+    loadGeneratedImages();
+    
+    // Обновляем каждые 5 секунд
+    setInterval(async () => {
+        await loadSmartBatchStats();
+        await loadSmartBatchList();
+        await loadCurrentMixedText();
+        await loadGeneratedImages();
+    }, 5000);
+}
+
+// Загрузка сгенерированных изображений
+async function loadGeneratedImages() {
+    try {
+        const response = await fetch('/api/admin/smart-batches/images');
+        const data = await response.json();
+        
+        if (data.success) {
+            updateImagesGridDisplay(data.images);
+        } else {
+            console.error('Ошибка загрузки изображений:', data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки изображений:', error);
+    }
+}
+
+// Обновление отображения сетки изображений
+function updateImagesGridDisplay(images) {
+    const imagesGrid = document.getElementById('images-grid');
+    
+    if (!images || images.length === 0) {
+        imagesGrid.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Нет сгенерированных изображений</div>';
+        return;
+    }
+    
+    imagesGrid.innerHTML = images.map(image => `
+        <div class="image-card" onclick="openImageModal('${image.image_url}', '${image.mixed_text}')">
+            <img src="${image.image_url}" alt="${image.mixed_text}" loading="lazy">
+            <div class="image-card-content">
+                <div class="image-card-title">${image.mixed_text}</div>
+                <div class="image-card-meta">
+                    <div class="image-card-time">${formatTime(image.completed_at)}</div>
+                    <div class="image-card-stats">
+                        <span class="image-card-stat messages">${image.message_count} сообщ.</span>
+                        <span class="image-card-stat time">${image.processing_time.toFixed(1)}с</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Форматирование времени
+function formatTime(timestamp) {
+    if (!timestamp) return 'Неизвестно';
+    
+    const date = new Date(timestamp * 1000);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    
+    if (diffMins < 1) return 'Только что';
+    if (diffMins < 60) return `${diffMins}м назад`;
+    if (diffHours < 24) return `${diffHours}ч назад`;
+    
+    return date.toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Модальное окно для просмотра изображения
+function openImageModal(imageUrl, title) {
+    // Создаем модальное окно
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        cursor: pointer;
+    `;
+    
+    modal.innerHTML = `
+        <div style="max-width: 90%; max-height: 90%; position: relative;">
+            <img src="${imageUrl}" alt="${title}" style="max-width: 100%; max-height: 100%; border-radius: 8px;">
+            <div style="position: absolute; top: -40px; left: 0; color: white; font-size: 18px; font-weight: bold;">
+                ${title}
+            </div>
+            <div style="position: absolute; top: -40px; right: 0; color: white; font-size: 24px; cursor: pointer;">
+                ✕
+            </div>
+        </div>
+    `;
+    
+    // Закрытие модального окна
+    modal.onclick = () => document.body.removeChild(modal);
+    
+    document.body.appendChild(modal);
+}
+
+// Данные промтов из программы концерта
+const concertPrompts = [
+    {
+        id: 1,
+        title: "Eye of the tiger (Rocky)",
+        description: "Мрачный кинематографичный реализм во вселенной Рокки; боксерские перчатки, спортзал, мотивация; контрастное освещение, палитра: серый бетон, красная кровь, золотые блики; фактуры: пот, металл, кожа; широкий план, масштаб, без крупных лиц.",
+        duration: "4:13"
+    },
+    {
+        id: 2,
+        title: "Kiss from a rose (Batman)",
+        description: "Мрачный кинематографичный реализм во вселенной Бэтмена; готическая архитектура, темные улицы, роза; контрастное освещение, палитра: черный, красный, золотые блики; фактуры: камень, металл, лепестки; широкий план, масштаб, без крупных лиц.",
+        duration: "3:56"
+    },
+    {
+        id: 3,
+        title: "Ghostbusters",
+        description: "Мрачный кинематографичный реализм во вселенной Охотников за привидениями; призраки, ловушки, неоновые огни; контрастное освещение, палитра: зеленый, черный, белый; фактуры: металл, стекло, энергия; широкий план, масштаб, без крупных лиц.",
+        duration: "3:09"
+    },
+    {
+        id: 4,
+        title: "Now we are free (Gladiator)",
+        description: "Мрачный кинематографичный реализм во вселенной Гладиатора; арена, песок, свобода; контрастное освещение, палитра: золото, красный, белый; фактуры: камень, металл, ткань; широкий план, масштаб, без крупных лиц.",
+        duration: "3:22"
+    },
+    {
+        id: 5,
+        title: "Шерлок Холмс",
+        description: "Мрачный кинематографичный реализм во вселенной Шерлока Холмса; викторианский Лондон, туман, дедукция; контрастное освещение, палитра: серый, коричневый, золотые блики; фактуры: камень, дерево, бумага; широкий план, масштаб, без крупных лиц.",
+        duration: "4:53"
+    },
+    {
+        id: 6,
+        title: "Interstellar",
+        description: "Мрачный кинематографичный реализм во вселенной Интерстеллар; космос, черные дыры, время; контрастное освещение, палитра: черный, синий, белый; фактуры: металл, энергия, звезды; широкий план, масштаб, без крупных лиц.",
+        duration: "5:20"
+    },
+    {
+        id: 7,
+        title: "Mission impossible",
+        description: "Мрачный кинематографичный реализм во вселенной Миссия невыполнима; шпионаж, технологии, опасность; контрастное освещение, палитра: черный, красный, серебро; фактуры: металл, стекло, взрывчатки; широкий план, масштаб, без крупных лиц.",
+        duration: "2:55"
+    },
+    {
+        id: 8,
+        title: "Shape of my heart (Leon)",
+        description: "Мрачный кинематографичный реализм во вселенной Леон; Нью-Йорк, одиночество, сердце; контрастное освещение, палитра: серый, красный, золотые блики; фактуры: камень, металл, цветы; широкий план, масштаб, без крупных лиц.",
+        duration: "4:23"
+    },
+    {
+        id: 9,
+        title: "Star Wars",
+        description: "Мрачный кинематографичный реализм во вселенной Звездных войн; космос, световые мечи, сила; контрастное освещение, палитра: черный, синий, белый; фактуры: металл, энергия, звезды; широкий план, масштаб, без крупных лиц.",
+        duration: "3:58"
+    },
+    {
+        id: 10,
+        title: "Chi mai (Professional)",
+        description: "Мрачный кинематографичный реализм во вселенной Профессионал; Париж, профессионализм, элегантность; контрастное освещение, палитра: серый, черный, золотые блики; фактуры: камень, металл, ткань; широкий план, масштаб, без крупных лиц.",
+        duration: "4:16"
+    },
+    {
+        id: 11,
+        title: "Kill Bill",
+        description: "Мрачный кинематографичный реализм во вселенной Убить Билла; месть, самураи, кровь; контрастное освещение, палитра: красный, черный, белый; фактуры: металл, ткань, кровь; широкий план, масштаб, без крупных лиц.",
+        duration: "3:34"
+    },
+    {
+        id: 12,
+        title: "Game of Thrones",
+        description: "Мрачный кинематографичный реализм во вселенной Игра престолов; средневековье, драконы, престол; контрастное освещение, палитра: серый, красный, золотые блики; фактуры: камень, металл, огонь; широкий план, масштаб, без крупных лиц.",
+        duration: "4:30"
+    },
+    {
+        id: 13,
+        title: "Charms (Мы. Верим в любовь)",
+        description: "Мрачный кинематографичный реализм во вселенной Мы. Верим в любовь; магия, любовь, очарование; контрастное освещение, палитра: розовый, золотой, белый; фактуры: кристаллы, ткань, свет; широкий план, масштаб, без крупных лиц.",
+        duration: "4:03"
+    },
+    {
+        id: 14,
+        title: "Primavera (1+1)",
+        description: "Мрачный кинематографичный реализм во вселенной 1+1; весна, надежда, дружба; контрастное освещение, палитра: зеленый, голубой, золотые блики; фактуры: листья, вода, свет; широкий план, масштаб, без крупных лиц.",
+        duration: "4:31"
+    },
+    {
+        id: 15,
+        title: "Skyfall (Джеймс Бонд)",
+        description: "Мрачный кинематографичный реализм во вселенной Джеймса Бонда; шпионаж, элегантность, опасность; контрастное освещение, палитра: черный, золотой, серебро; фактуры: металл, стекло, взрывчатки; широкий план, масштаб, без крупных лиц.",
+        duration: "4:32"
+    },
+    {
+        id: 16,
+        title: "Misirlou (Криминальное чтиво)",
+        description: "Мрачный кинематографичный реализм во вселенной Криминального чтива; криминал, стиль, напряжение; контрастное освещение, палитра: черный, красный, золотые блики; фактуры: кожа, металл, кровь; широкий план, масштаб, без крупных лиц.",
+        duration: "2:57"
+    },
+    {
+        id: 17,
+        title: "Свой среди чужих",
+        description: "Мрачный кинематографичный реализм во вселенной Свой среди чужих; одиночество, поиск, принадлежность; контрастное освещение, палитра: серый, синий, золотые блики; фактуры: камень, металл, ткань; широкий план, масштаб, без крупных лиц.",
+        duration: "3:03"
+    },
+    {
+        id: 18,
+        title: "Pirates of Caribbean",
+        description: "Мрачный кинематографичный реализм во вселенной Пиратов Карибского моря; деревянные корабли с парусами и пушками; пираты; морская дымка, контраст, рим-свет; палитра: сталь/свинец воды, изумруд/бирюза, мох, мокрое дерево, патина бронзы, янтарные блики; фактуры: соль на канатах, камень, рваная парусина, брызги; широкий план, масштаб, без крупных лиц.",
+        duration: "3:13"
+    },
+    {
+        id: 19,
+        title: "Лебединое (Бис)",
+        description: "Мрачный кинематографичный реализм во вселенной Лебединого озера; балет, элегантность, трагедия; контрастное освещение, палитра: белый, черный, золотые блики; фактуры: ткань, перья, свет; широкий план, масштаб, без крупных лиц.",
+        duration: "4:42"
+    }
+];
+
+// Переменные для управления промтами
+let currentPromptIndex = 0;
+let isDropdownOpen = false;
+
+// Инициализация промтов
+function initializePrompts() {
+    console.log('🎬 Инициализация промтов...');
+    console.log('📊 Количество промтов:', concertPrompts.length);
+    
+    loadPrompts();
+    updatePromptDisplay();
+    
+    console.log('✅ Промты инициализированы');
+    console.log('🔍 Элементы DOM:', {
+        dropdown: document.getElementById('prompt-dropdown'),
+        header: document.querySelector('.prompt-dropdown-header'),
+        list: document.getElementById('prompt-list')
+    });
+}
+
+// Загрузка промтов
+function loadPrompts() {
+    const promptList = document.getElementById('prompt-list');
+    promptList.innerHTML = '';
+    
+    concertPrompts.forEach((prompt, index) => {
+        const promptItem = createPromptItem(prompt, index);
+        promptList.appendChild(promptItem);
+    });
+}
+
+// Создание элемента промта
+function createPromptItem(prompt, index) {
+    const item = document.createElement('div');
+    item.className = 'prompt-item';
+    item.draggable = true;
+    item.dataset.index = index;
+    
+    item.innerHTML = `
+        <div class="prompt-drag-handle">⋮⋮</div>
+        <div class="prompt-item-content">
+            <div class="prompt-item-title">${prompt.title}</div>
+            <div class="prompt-item-description">${prompt.description}</div>
+            <div class="prompt-item-duration">⏱️ ${prompt.duration}</div>
+        </div>
+        <div class="prompt-item-actions">
+            <button class="prompt-action-btn edit" onclick="editPrompt(${index})" title="Редактировать">✏️</button>
+            <button class="prompt-action-btn delete" onclick="deletePrompt(${index})" title="Удалить">🗑️</button>
+        </div>
+    `;
+    
+    // Обработчики drag and drop
+    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragover', handleDragOver);
+    item.addEventListener('drop', handleDrop);
+    item.addEventListener('dragend', handleDragEnd);
+    
+    // Обработчик клика для выбора промта
+    item.addEventListener('click', (e) => {
+        if (!e.target.closest('.prompt-action-btn')) {
+            selectPrompt(index);
+        }
+    });
+    
+    return item;
+}
+
+// Переключение выпадающего списка
+function togglePromptDropdown() {
+    console.log('🔄 Переключение выпадающего списка...');
+    console.log('📊 Текущее состояние:', isDropdownOpen);
+    
+    const dropdown = document.getElementById('prompt-dropdown');
+    const header = document.querySelector('.prompt-dropdown-header');
+    
+    console.log('🔍 Элементы DOM:', { dropdown, header });
+    
+    isDropdownOpen = !isDropdownOpen;
+    
+    if (isDropdownOpen) {
+        dropdown.classList.add('active');
+        header.classList.add('active');
+        console.log('✅ Выпадающий список открыт');
+        
+        // Добавляем обработчик клика вне списка для закрытия
+        setTimeout(() => {
+            document.addEventListener('click', closeDropdownOnOutsideClick);
+        }, 100);
+    } else {
+        dropdown.classList.remove('active');
+        header.classList.remove('active');
+        console.log('❌ Выпадающий список закрыт');
+        document.removeEventListener('click', closeDropdownOnOutsideClick);
+    }
+}
+
+// Закрытие выпадающего списка при клике вне его
+function closeDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById('prompt-dropdown');
+    const header = document.querySelector('.prompt-dropdown-header');
+    
+    if (!dropdown.contains(event.target) && !header.contains(event.target)) {
+        dropdown.classList.remove('active');
+        header.classList.remove('active');
+        isDropdownOpen = false;
+        document.removeEventListener('click', closeDropdownOnOutsideClick);
+    }
+}
+
+// Выбор промта
+function selectPrompt(index) {
+    currentPromptIndex = index;
+    const prompt = concertPrompts[index];
+    
+    document.getElementById('current-prompt-title').textContent = prompt.title;
+    document.getElementById('prompt-text').innerHTML = `
+        <strong>${prompt.title}</strong><br>
+        <span style="color: #007bff; font-weight: 600;">⏱️ ${prompt.duration}</span><br><br>
+        ${prompt.description}
+    `;
+    
+    togglePromptDropdown();
+}
+
+// Обновление отображения промта
+function updatePromptDisplay() {
+    if (concertPrompts.length > 0) {
+        selectPrompt(currentPromptIndex);
+    }
+}
+
+// Drag and Drop обработчики
+function handleDragStart(e) {
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const dragging = document.querySelector('.dragging');
+    const afterElement = getDragAfterElement(e.target.closest('.prompt-list'), e.clientY);
+    
+    if (afterElement == null) {
+        e.target.closest('.prompt-list').appendChild(dragging);
+    } else {
+        e.target.closest('.prompt-list').insertBefore(dragging, afterElement);
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    // Обновление порядка промтов будет реализовано позже
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.prompt-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Редактирование промта
+function editPrompt(index) {
+    const prompt = concertPrompts[index];
+    const newTitle = window.prompt('Редактировать название:', prompt.title);
+    if (newTitle !== null) {
+        prompt.title = newTitle;
+        loadPrompts();
+        updatePromptDisplay();
+    }
+}
+
+// Удаление промта
+function deletePrompt(index) {
+    if (confirm('Удалить этот промт?')) {
+        concertPrompts.splice(index, 1);
+        if (currentPromptIndex >= concertPrompts.length) {
+            currentPromptIndex = Math.max(0, concertPrompts.length - 1);
+        }
+        loadPrompts();
+        updatePromptDisplay();
+    }
+}
+
+// Добавление нового промта
+function addNewPrompt() {
+    const title = window.prompt('Название нового промта:');
+    if (title) {
+        const newPrompt = {
+            id: concertPrompts.length + 1,
+            title: title,
+            description: 'Описание промта...',
+            duration: '0:00'
+        };
+        concertPrompts.push(newPrompt);
+        loadPrompts();
+        selectPrompt(concertPrompts.length - 1);
+    }
+}
+
+// Следующий промт
+function nextPrompt() {
+    if (concertPrompts.length > 0) {
+        currentPromptIndex = (currentPromptIndex + 1) % concertPrompts.length;
+        selectPrompt(currentPromptIndex);
+    }
+}
+
+// Обновление базового промта
+function updateBasePrompt() {
+    if (concertPrompts.length > 0) {
+        const prompt = concertPrompts[currentPromptIndex];
+        console.log('Обновление базового промта:', prompt.title);
+        // Здесь будет логика обновления промта на сервере
+    }
+}
+
+// Экспорт функций промтов
+window.togglePromptDropdown = togglePromptDropdown;
+window.selectPrompt = selectPrompt;
+window.editPrompt = editPrompt;
+window.deletePrompt = deletePrompt;
+window.addNewPrompt = addNewPrompt;
+window.nextPrompt = nextPrompt;
+window.updateBasePrompt = updateBasePrompt;
+window.initializePrompts = initializePrompts;
+
+// Функция для очистки всех сообщений
+async function clearAllMessages() {
+    try {
+        // Показываем подтверждение
+        const confirmed = confirm('⚠️ ВНИМАНИЕ!\n\nВы уверены, что хотите очистить ВСЕ сообщения?\n\nЭто действие нельзя отменить!\n\nНажмите OK для подтверждения или Отмена для отмены.');
+        
+        if (!confirmed) {
+            console.log('Очистка сообщений отменена пользователем');
+            return;
+        }
+        
+        // Показываем индикатор загрузки
+        const clearBtn = document.getElementById('clear-messages-btn');
+        const originalText = clearBtn.textContent;
+        clearBtn.disabled = true;
+        clearBtn.textContent = '🔄 Очистка...';
+        
+        // Отправляем запрос на очистку
+        const response = await fetch('/api/admin/clear-messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Показываем уведомление об успехе
+            alert('✅ Все сообщения успешно очищены!');
+            
+            // Обновляем статистику и список батчей
+            await loadSmartBatchStats();
+            await loadSmartBatchList();
+            
+            console.log('Сообщения успешно очищены');
+        } else {
+            // Показываем ошибку
+            alert(`❌ Ошибка очистки сообщений: ${data.message}`);
+            console.error('Ошибка очистки сообщений:', data.message);
+        }
+        
+    } catch (error) {
+        console.error('Ошибка при очистке сообщений:', error);
+        alert('❌ Произошла ошибка при очистке сообщений. Проверьте консоль для подробностей.');
+    } finally {
+        // Восстанавливаем кнопку
+        const clearBtn = document.getElementById('clear-messages-btn');
+        clearBtn.disabled = false;
+        clearBtn.textContent = '🗑️ Очистить сообщения';
+    }
+}
+
+// Экспортируем новые функции
+window.loadSmartBatchStats = loadSmartBatchStats;
+window.loadSmartBatchList = loadSmartBatchList;
+window.forceCreateBatches = forceCreateBatches;
+window.processNextBatch = processNextBatch;
+window.loadCurrentMixedText = loadCurrentMixedText;
+window.loadGeneratedImages = loadGeneratedImages;
+window.startSmartBatchAutoUpdate = startSmartBatchAutoUpdate;
+window.openImageModal = openImageModal;
+window.toggleStatsDropdown = toggleStatsDropdown;
+window.clearAllMessages = clearAllMessages;
