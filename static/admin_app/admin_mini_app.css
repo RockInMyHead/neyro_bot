@@ -703,10 +703,13 @@ body {
 }
 
 .prompt-item-title {
-    color: #fff;
+    color: #000000;
     font-weight: 600;
     font-size: 14px;
     flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    border-radius: 4px;
 }
 
 .prompt-item-actions {
