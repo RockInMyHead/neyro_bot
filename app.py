@@ -300,6 +300,56 @@ def admin_generate_content():
         logger.error(f"Ошибка генерации контента: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+@app.route('/api/admin/send-concert-message', methods=['POST'])
+def admin_send_concert_message():
+    """Отправляет концертное сообщение в чат"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'type' not in data:
+            return jsonify({"success": False, "message": "Неверные данные"}), 400
+        
+        message_type = data['type']
+        content = data.get('content', {})
+        
+        if message_type == 'track_message':
+            title = content.get('title', '')
+            description = content.get('description', '')
+            actors = content.get('actors', '')
+            
+            message = f"""📽️ **{title}**
+
+{description}
+
+**Актёры/персонажи:** {actors}
+
+---
+
+Какие образы или пейзажи возникают у вас, когда вы думаете об этой истории? 
+
+Пожалуйста, ответьте 1–5 словами. Можно написать сейчас или во время исполнения, но только один раз в рамках этого произведения."""
+            
+        elif message_type == 'concert_end':
+            message = """Спасибо, что были с нами — Main Strings Orchestra × Neuroevent.
+Оставьте короткий отзыв — это помогает нам становиться лучше!
+P.S. Ответы анонимны."""
+            
+        else:
+            return jsonify({"success": False, "message": "Неизвестный тип сообщения"}), 400
+        
+        # Здесь можно добавить логику отправки сообщения в чат
+        # Пока просто логируем
+        logger.info(f"Концертное сообщение ({message_type}): {message[:100]}...")
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Сообщение типа '{message_type}' отправлено"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка отправки концертного сообщения: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
 @app.route('/api/admin/update-base-prompt', methods=['POST'])
 def admin_update_base_prompt():
     """Обновляет базовый промт для AI"""
