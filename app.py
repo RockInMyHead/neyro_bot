@@ -267,6 +267,39 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/admin/generate-content', methods=['POST'])
+def admin_generate_content():
+    """Генерирует контент для концертных сообщений с помощью ChatGPT"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'prompt' not in data:
+            return jsonify({"success": False, "message": "Неверные данные"}), 400
+        
+        prompt = data['prompt']
+        content_type = data.get('type', 'general')
+        
+        # Используем OpenAI для генерации контента
+        import asyncio
+        from openai_client import get_openai_response
+        
+        # Выполняем асинхронную генерацию
+        generated_content = asyncio.run(get_openai_response(prompt))
+        
+        if generated_content:
+            logger.info(f"Контент сгенерирован ({content_type}): {generated_content[:100]}...")
+            return jsonify({
+                "success": True,
+                "content": generated_content,
+                "type": content_type
+            })
+        else:
+            return jsonify({"success": False, "message": "Ошибка генерации контента"}), 500
+            
+    except Exception as e:
+        logger.error(f"Ошибка генерации контента: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
 @app.route('/api/admin/update-base-prompt', methods=['POST'])
 def admin_update_base_prompt():
     """Обновляет базовый промт для AI"""

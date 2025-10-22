@@ -654,23 +654,36 @@ body {
     border-left: 3px solid #4CAF50;
 }
 
-/* Стили для кнопок управления промтами */
-.prompt-controls {
+/* Стили для генерации контента */
+.input-with-generate {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
+    align-items: flex-start;
 }
 
-.prompt-controls .btn {
+.input-with-generate input,
+.input-with-generate textarea {
     flex: 1;
 }
 
-/* Информация об очереди */
-.queue-info {
-    color: rgba(255, 255, 255, 0.8);
+.btn-small {
+    padding: 8px 12px;
     font-size: 12px;
-    margin-bottom: 15px;
-    font-style: italic;
+    min-width: auto;
+    flex-shrink: 0;
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4CAF50;
+    color: #4CAF50;
+    transition: all 0.3s ease;
+}
+
+.btn-small:hover {
+    background: rgba(76, 175, 80, 0.3);
+    transform: scale(1.05);
+}
+
+.btn-small:active {
+    transform: scale(0.95);
 }
 
 /* Стили для редактирования промтов */

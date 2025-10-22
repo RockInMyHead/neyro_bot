@@ -735,6 +735,178 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPromptList();
 });
 
+// ===== ФУНКЦИИ ГЕНЕРАЦИИ КОНЦЕРТНОГО КОНТЕНТА =====
+
+async function generateMovieTitle() {
+    if (promptQueue.length === 0) {
+        showNotification('Ошибка: очередь промтов пуста', 'error');
+        return;
+    }
+    
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptContent = basePrompts[currentPromptKey];
+    
+    if (!currentPromptContent) {
+        showNotification('Ошибка: промт не найден', 'error');
+        return;
+    }
+    
+    const prompt = `На основе этого кинематографического стиля: "${currentPromptContent}"\n\nСгенерируй название фильма в этом стиле. Ответь только названием фильма, без дополнительных объяснений.`;
+    
+    try {
+        const response = await fetch('/api/admin/generate-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                type: 'movie_title'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('movie-title').value = data.content;
+            showNotification('Название фильма сгенерировано!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка генерации', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации названия фильма:', error);
+        showNotification('Ошибка генерации названия фильма', 'error');
+    }
+}
+
+async function generateMovieDescription() {
+    if (promptQueue.length === 0) {
+        showNotification('Ошибка: очередь промтов пуста', 'error');
+        return;
+    }
+    
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptContent = basePrompts[currentPromptKey];
+    const movieTitle = document.getElementById('movie-title').value;
+    
+    if (!currentPromptContent) {
+        showNotification('Ошибка: промт не найден', 'error');
+        return;
+    }
+    
+    const prompt = `На основе этого кинематографического стиля: "${currentPromptContent}"\n\nФильм: "${movieTitle || 'фильм в этом стиле'}"\n\nНапиши короткое описание фильма (2-3 предложения) о чем он, какие вопросы поднимает. Стиль должен соответствовать кинематографическому направлению.`;
+    
+    try {
+        const response = await fetch('/api/admin/generate-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                type: 'movie_description'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('movie-description').value = data.content;
+            showNotification('Описание фильма сгенерировано!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка генерации', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации описания фильма:', error);
+        showNotification('Ошибка генерации описания фильма', 'error');
+    }
+}
+
+async function generateMovieActors() {
+    if (promptQueue.length === 0) {
+        showNotification('Ошибка: очередь промтов пуста', 'error');
+        return;
+    }
+    
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptContent = basePrompts[currentPromptKey];
+    const movieTitle = document.getElementById('movie-title').value;
+    
+    if (!currentPromptContent) {
+        showNotification('Ошибка: промт не найден', 'error');
+        return;
+    }
+    
+    const prompt = `На основе этого кинематографического стиля: "${currentPromptContent}"\n\nФильм: "${movieTitle || 'фильм в этом стиле'}"\n\nПеречисли актёров/персонажей в главных ролях (3-5 имен), которые подходят к этому стилю фильма. Ответь в формате: "Имя актёра (роль), Имя актёра (роль)"`;
+    
+    try {
+        const response = await fetch('/api/admin/generate-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                type: 'movie_actors'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('movie-actors').value = data.content;
+            showNotification('Актёры/персонажи сгенерированы!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка генерации', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации актёров:', error);
+        showNotification('Ошибка генерации актёров', 'error');
+    }
+}
+
+async function generateAIComment() {
+    if (promptQueue.length === 0) {
+        showNotification('Ошибка: очередь промтов пуста', 'error');
+        return;
+    }
+    
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptContent = basePrompts[currentPromptKey];
+    
+    if (!currentPromptContent) {
+        showNotification('Ошибка: промт не найден', 'error');
+        return;
+    }
+    
+    const prompt = `На основе этого кинематографического стиля: "${currentPromptContent}"\n\nНапиши краткий умный комментарий от нейронки для зрителей концерта. Комментарий должен быть связан с киновселенной и стилем фильма, но адаптирован для музыкального концерта. Длина: 1-2 предложения.`;
+    
+    try {
+        const response = await fetch('/api/admin/generate-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                type: 'ai_comment'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('ai-comment').value = data.content;
+            showNotification('Комментарий от нейронки сгенерирован!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка генерации', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации комментария:', error);
+        showNotification('Ошибка генерации комментария', 'error');
+    }
+}
+
 // ===== ФУНКЦИИ УПРАВЛЕНИЯ КОНЦЕРТОМ =====
 
 async function sendTrackMessage() {
@@ -907,3 +1079,7 @@ window.sendTrackMessage = sendTrackMessage;
 window.sendAudienceResponse = sendAudienceResponse;
 window.sendConcertEnd = sendConcertEnd;
 window.nextPrompt = nextPrompt;
+window.generateMovieTitle = generateMovieTitle;
+window.generateMovieDescription = generateMovieDescription;
+window.generateMovieActors = generateMovieActors;
+window.generateAIComment = generateAIComment;
