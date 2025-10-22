@@ -55,6 +55,8 @@ function initializePromptQueue() {
     // Загружаем список промтов
     loadPromptList();
     
+    // Генерируем концертный контент для текущего промта
+    generateConcertContent();
 }
 
 function startAutoUpdate() {
@@ -500,6 +502,8 @@ function nextPrompt() {
     
     showNotification(`Переход к следующему промту: ${basePrompts[promptQueue[0]]?.split('\n')[0] || 'Неизвестный промт'}`, 'success');
     
+    // Автоматически генерируем концертный контент для нового промта
+    generateConcertContent();
 }
 
 // Функция для обновления предварительного просмотра промта
@@ -551,7 +555,7 @@ function createPromptItem(key, content, isCurrent = false, index) {
                 <button class="prompt-item-btn edit" onclick="editPrompt('${key}')">✏️</button>
                 <button class="prompt-item-btn delete" onclick="deletePrompt('${key}')">🗑️</button>
             </div>
-        </div>
+            </div>
         <div class="prompt-item-content" onclick="togglePromptContent(this)">
             ${description}
             </div>
@@ -735,6 +739,96 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPromptList();
 });
 
+// ===== ФУНКЦИИ АВТОМАТИЧЕСКОЙ ГЕНЕРАЦИИ КОНЦЕРТНОГО КОНТЕНТА =====
+
+// Функция для автоматической генерации концертного контента
+async function generateConcertContent() {
+    if (promptQueue.length === 0) {
+        updateConcertDisplay('Ошибка: очередь промтов пуста', 'Ошибка: очередь промтов пуста', 'Ошибка: очередь промтов пуста');
+        return;
+    }
+    
+    const currentPromptKey = promptQueue[currentPromptIndex];
+    const currentPromptContent = basePrompts[currentPromptKey];
+    
+    if (!currentPromptContent) {
+        updateConcertDisplay('Ошибка: промт не найден', 'Ошибка: промт не найден', 'Ошибка: промт не найден');
+        return;
+    }
+    
+    // Показываем индикатор загрузки
+    updateConcertDisplay('Генерация...', 'Генерация...', 'Генерация...');
+    
+    try {
+        // Генерируем все контенты параллельно
+        const [titleResult, descriptionResult, actorsResult] = await Promise.all([
+            generateContentByType('movie_title', currentPromptContent),
+            generateContentByType('movie_description', currentPromptContent),
+            generateContentByType('movie_actors', currentPromptContent)
+        ]);
+        
+        updateConcertDisplay(titleResult, descriptionResult, actorsResult);
+        
+    } catch (error) {
+        console.error('Ошибка генерации концертного контента:', error);
+        updateConcertDisplay('Ошибка генерации', 'Ошибка генерации', 'Ошибка генерации');
+    }
+}
+
+// Вспомогательная функция для генерации контента по типу
+async function generateContentByType(type, promptContent) {
+    let prompt = '';
+    
+    switch (type) {
+        case 'movie_title':
+            prompt = `На основе этого кинематографического стиля: "${promptContent}"\n\nСгенерируй название фильма в этом стиле. Ответь только названием фильма, без дополнительных объяснений.`;
+            break;
+        case 'movie_description':
+            prompt = `На основе этого кинематографического стиля: "${promptContent}"\n\nНапиши короткое описание фильма (2-3 предложения) о чем он, какие вопросы поднимает. Стиль должен соответствовать кинематографическому направлению.`;
+            break;
+        case 'movie_actors':
+            prompt = `На основе этого кинематографического стиля: "${promptContent}"\n\nПеречисли актёров/персонажей в главных ролях (3-5 имен), которые подходят к этому стилю фильма. Ответь в формате: "Имя актёра (роль), Имя актёра (роль)"`;
+            break;
+        default:
+            return 'Неизвестный тип';
+    }
+    
+    try {
+        const response = await fetch('/api/admin/generate-content', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                type: type
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            return data.content;
+        } else {
+            return 'Ошибка генерации';
+        }
+    } catch (error) {
+        console.error(`Ошибка генерации ${type}:`, error);
+        return 'Ошибка генерации';
+    }
+}
+
+// Функция для обновления отображения концертного контента
+function updateConcertDisplay(title, description, actors) {
+    const titleElement = document.getElementById('generated-movie-title');
+    const descriptionElement = document.getElementById('generated-movie-description');
+    const actorsElement = document.getElementById('generated-movie-actors');
+    
+    if (titleElement) titleElement.textContent = title;
+    if (descriptionElement) descriptionElement.textContent = description;
+    if (actorsElement) actorsElement.textContent = actors;
+}
+
 // ===== ФУНКЦИИ ГЕНЕРАЦИИ КОНЦЕРТНОГО КОНТЕНТА =====
 
 async function generateMovieTitle() {
@@ -912,9 +1006,9 @@ async function generateAIComment() {
 async function sendTrackMessage() {
     console.log('sendTrackMessage вызвана');
     
-    const movieTitle = document.getElementById('movie-title');
-    const movieDescription = document.getElementById('movie-description');
-    const movieActors = document.getElementById('movie-actors');
+    const movieTitle = document.getElementById('generated-movie-title');
+    const movieDescription = document.getElementById('generated-movie-description');
+    const movieActors = document.getElementById('generated-movie-actors');
     
     console.log('Элементы найдены:', {
         title: movieTitle,
@@ -928,9 +1022,9 @@ async function sendTrackMessage() {
         return;
     }
     
-    const titleValue = movieTitle.value.trim();
-    const descriptionValue = movieDescription.value.trim();
-    const actorsValue = movieActors.value.trim();
+    const titleValue = movieTitle.textContent.trim();
+    const descriptionValue = movieDescription.textContent.trim();
+    const actorsValue = movieActors.textContent.trim();
     
     console.log('Значения полей:', {
         title: titleValue,

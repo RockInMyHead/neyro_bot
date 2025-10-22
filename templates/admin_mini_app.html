@@ -118,25 +118,18 @@
                 <div class="concert-controls">
                     <div class="concert-section">
                         <h3>📽️ Сообщение перед треком</h3>
-                        <div class="form-group">
-                            <label for="movie-title">Название фильма:</label>
-                            <div class="input-with-generate">
-                                <input type="text" id="movie-title" placeholder="Например: Blade Runner">
-                                <button class="btn btn-small" onclick="generateMovieTitle()">🎲</button>
+                        <div class="generated-content">
+                            <div class="content-item">
+                                <label>Название фильма:</label>
+                                <div class="content-display" id="generated-movie-title">Загрузка...</div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="movie-description">Короткое описание:</label>
-                            <div class="input-with-generate">
-                                <textarea id="movie-description" placeholder="О чем фильм, какие вопросы поднимает..."></textarea>
-                                <button class="btn btn-small" onclick="generateMovieDescription()">🎲</button>
+                            <div class="content-item">
+                                <label>Короткое описание:</label>
+                                <div class="content-display" id="generated-movie-description">Загрузка...</div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="movie-actors">Актёры/персонажи:</label>
-                            <div class="input-with-generate">
-                                <input type="text" id="movie-actors" placeholder="Например: Harrison Ford, Rutger Hauer">
-                                <button class="btn btn-small" onclick="generateMovieActors()">🎲</button>
+                            <div class="content-item">
+                                <label>Актёры/персонажи:</label>
+                                <div class="content-display" id="generated-movie-actors">Загрузка...</div>
                             </div>
                         </div>
                         <button class="btn btn-primary" onclick="sendTrackMessage()">🎵 Отправить сообщение перед треком</button>
