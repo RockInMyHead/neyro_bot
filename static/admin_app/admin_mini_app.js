@@ -739,11 +739,109 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPromptList();
 });
 
+// ===== ФУНКЦИИ РЕДАКТИРОВАНИЯ КОНЦЕРТНОГО КОНТЕНТА =====
+
+// Функция для переключения между режимами просмотра и редактирования
+function toggleEdit(fieldId) {
+    const displayElement = document.getElementById(fieldId);
+    const editElement = document.getElementById(fieldId + '-edit');
+    const editBtn = displayElement.parentElement.querySelector('.edit-btn');
+    
+    if (!displayElement || !editElement || !editBtn) {
+        console.error('Элементы для редактирования не найдены:', fieldId);
+        return;
+    }
+    
+    const isEditing = editElement.style.display !== 'none';
+    
+    if (isEditing) {
+        // Сохраняем изменения и переключаемся в режим просмотра
+        const newValue = editElement.value.trim();
+        if (newValue) {
+            displayElement.textContent = newValue;
+            console.log(`✅ Сохранено изменение для ${fieldId}:`, newValue);
+        }
+        
+        editElement.style.display = 'none';
+        displayElement.style.display = 'flex';
+        editBtn.textContent = '✏️';
+        editBtn.classList.remove('editing');
+        
+    } else {
+        // Переключаемся в режим редактирования
+        editElement.value = displayElement.textContent;
+        editElement.style.display = 'block';
+        displayElement.style.display = 'none';
+        editBtn.textContent = '💾';
+        editBtn.classList.add('editing');
+        
+        // Фокусируемся на поле редактирования
+        setTimeout(() => {
+            editElement.focus();
+            editElement.select();
+        }, 100);
+    }
+}
+
+// Функция для сохранения всех изменений
+function saveAllEdits() {
+    const editableFields = ['current-prompt-title', 'generated-movie-description', 'generated-movie-actors', 'concert-end-message'];
+    
+    editableFields.forEach(fieldId => {
+        const displayElement = document.getElementById(fieldId);
+        const editElement = document.getElementById(fieldId + '-edit');
+        
+        if (editElement && editElement.style.display !== 'none') {
+            const newValue = editElement.value.trim();
+            if (newValue) {
+                displayElement.textContent = newValue;
+                editElement.style.display = 'none';
+                displayElement.style.display = 'flex';
+                
+                const editBtn = displayElement.parentElement.querySelector('.edit-btn');
+                if (editBtn) {
+                    editBtn.textContent = '✏️';
+                    editBtn.classList.remove('editing');
+                }
+            }
+        }
+    });
+    
+    console.log('💾 Все изменения сохранены');
+}
+
+// Функция для отмены всех изменений
+function cancelAllEdits() {
+    const editableFields = ['current-prompt-title', 'generated-movie-description', 'generated-movie-actors', 'concert-end-message'];
+    
+    editableFields.forEach(fieldId => {
+        const displayElement = document.getElementById(fieldId);
+        const editElement = document.getElementById(fieldId + '-edit');
+        
+        if (editElement && editElement.style.display !== 'none') {
+            editElement.value = displayElement.textContent; // Восстанавливаем исходное значение
+            editElement.style.display = 'none';
+            displayElement.style.display = 'flex';
+            
+            const editBtn = displayElement.parentElement.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.textContent = '✏️';
+                editBtn.classList.remove('editing');
+            }
+        }
+    });
+    
+    console.log('❌ Все изменения отменены');
+}
+
 // ===== ФУНКЦИИ АВТОМАТИЧЕСКОЙ ГЕНЕРАЦИИ КОНЦЕРТНОГО КОНТЕНТА =====
 
 // Функция для автоматической генерации концертного контента
 async function generateConcertContent() {
+    console.log('🎬 Начинаем генерацию концертного контента...');
+    
     if (promptQueue.length === 0) {
+        console.error('❌ Очередь промтов пуста');
         updateConcertDisplay('Ошибка: очередь промтов пуста', 'Ошибка: очередь промтов пуста', 'Ошибка: очередь промтов пуста');
         return;
     }
@@ -751,7 +849,10 @@ async function generateConcertContent() {
     const currentPromptKey = promptQueue[currentPromptIndex];
     const currentPromptContent = basePrompts[currentPromptKey];
     
+    console.log('📝 Текущий промт:', currentPromptKey, currentPromptContent?.substring(0, 100));
+    
     if (!currentPromptContent) {
+        console.error('❌ Промт не найден');
         updateConcertDisplay('Ошибка: промт не найден', 'Ошибка: промт не найден', 'Ошибка: промт не найден');
         return;
     }
@@ -759,21 +860,24 @@ async function generateConcertContent() {
     // Показываем название промта (первая строка)
     const promptTitle = currentPromptContent.split('\n')[0];
     updatePromptTitle(promptTitle);
+    console.log('🏷️ Название промта:', promptTitle);
     
     // Показываем индикатор загрузки для остальных полей
     updateConcertDisplay('', 'Генерация...', 'Генерация...');
     
     try {
+        console.log('🔄 Генерируем описание и актёров...');
         // Генерируем только описание и актёров параллельно
         const [descriptionResult, actorsResult] = await Promise.all([
             generateContentByType('movie_description', currentPromptContent),
             generateContentByType('movie_actors', currentPromptContent)
         ]);
         
+        console.log('✅ Генерация завершена:', { descriptionResult, actorsResult });
         updateConcertDisplay('', descriptionResult, actorsResult);
         
     } catch (error) {
-        console.error('Ошибка генерации концертного контента:', error);
+        console.error('❌ Ошибка генерации концертного контента:', error);
         updateConcertDisplay('', 'Ошибка генерации', 'Ошибка генерации');
     }
 }
@@ -794,6 +898,8 @@ async function generateContentByType(type, promptContent) {
     }
     
     try {
+        console.log(`📤 Отправляем запрос для ${type}:`, prompt.substring(0, 100));
+        
         const response = await fetch('/api/admin/generate-content', {
             method: 'POST',
             headers: {
@@ -805,15 +911,19 @@ async function generateContentByType(type, promptContent) {
             })
         });
         
+        console.log(`📥 Получен ответ для ${type}:`, response.status);
+        
         const data = await response.json();
+        console.log(`✅ Данные для ${type}:`, data);
         
         if (data.success) {
             return data.content;
         } else {
+            console.error(`❌ Ошибка в ответе для ${type}:`, data);
             return 'Ошибка генерации';
         }
     } catch (error) {
-        console.error(`Ошибка генерации ${type}:`, error);
+        console.error(`❌ Ошибка запроса для ${type}:`, error);
         return 'Ошибка генерации';
     }
 }
@@ -1125,9 +1235,22 @@ async function sendAudienceResponse() {
 }
 
 async function sendConcertEnd() {
-    const message = `Спасибо, что были с нами — Main Strings Orchestra × Neuroevent.
-Оставьте короткий отзыв — это помогает нам становиться лучше!
-P.S. Ответы анонимны.`;
+    // Получаем сообщение из редактируемого поля
+    const messageElement = document.getElementById('concert-end-message');
+    if (!messageElement) {
+        console.error('Элемент concert-end-message не найден');
+        showNotification('Ошибка: поле сообщения не найдено', 'error');
+        return;
+    }
+    
+    const message = messageElement.textContent.trim();
+    
+    if (!message) {
+        showNotification('Пожалуйста, заполните финальное сообщение', 'warning');
+        return;
+    }
+    
+    console.log('Отправляем финальное сообщение:', message);
     
     try {
         const response = await fetch('/api/admin/send-concert-message', {
@@ -1183,3 +1306,10 @@ window.generateMovieTitle = generateMovieTitle;
 window.generateMovieDescription = generateMovieDescription;
 window.generateMovieActors = generateMovieActors;
 window.generateAIComment = generateAIComment;
+window.generateConcertContent = generateConcertContent;
+window.generateContentByType = generateContentByType;
+window.updateConcertDisplay = updateConcertDisplay;
+window.updatePromptTitle = updatePromptTitle;
+window.toggleEdit = toggleEdit;
+window.saveAllEdits = saveAllEdits;
+window.cancelAllEdits = cancelAllEdits;

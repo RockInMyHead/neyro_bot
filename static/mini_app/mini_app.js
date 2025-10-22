@@ -25,9 +25,42 @@ function initApp() {
     
     // Получаем данные пользователя
     const user = tg.initDataUnsafe?.user;
+    console.log('initApp - Telegram WebApp user data:', user);
+    console.log('initApp - tg.initDataUnsafe:', tg.initDataUnsafe);
+    console.log('initApp - tg.initData:', tg.initData);
+    
     if (user) {
-        console.log('Пользователь:', user);
+        console.log('Пользователь найден в tg.initDataUnsafe:', user);
         updateUserInfo(user);
+    } else {
+        console.log('Пользователь не найден в tg.initDataUnsafe, пробуем initData');
+        try {
+            const initData = tg.initData;
+            if (initData) {
+                const urlParams = new URLSearchParams(initData);
+                const userParam = urlParams.get('user');
+                if (userParam) {
+                    const userData = JSON.parse(decodeURIComponent(userParam));
+                    console.log('Пользователь найден в initData:', userData);
+                    updateUserInfo(userData);
+                } else {
+                    console.log('Пользователь не найден в initData');
+                }
+            }
+        } catch (e) {
+            console.log('Ошибка парсинга initData:', e);
+        }
+        
+        // Если все еще нет пользователя, создаем тестового для локальной разработки
+        if (!user) {
+            const testUser = {
+                id: Math.floor(Math.random() * 1000000) + 100000,
+                username: 'test_user',
+                first_name: 'Test User'
+            };
+            console.log('Создаем тестового пользователя для локальной разработки:', testUser);
+            updateUserInfo(testUser);
+        }
     }
     
     
@@ -42,6 +75,7 @@ function initApp() {
 
 // Обновление информации о пользователе
 function updateUserInfo(user) {
+    console.log('updateUserInfo called with:', user);
     const header = document.querySelector('.header p');
     if (header && user.first_name) {
         header.textContent = `с ВАС идеи — с НАС воплощение`;
@@ -144,6 +178,11 @@ function handleBotData(data) {
         switch (parsedData.action) {
             case 'show_message':
                 showNotification(parsedData.message);
+                // Re-enable chat input for user response
+                const chatInput = document.getElementById('chat-input');
+                const sendBtn = document.querySelector('.chat-send-btn');
+                if (chatInput) chatInput.disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
                 break;
             default:
                 console.log('Неизвестное действие:', parsedData.action);
@@ -222,13 +261,19 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
 }
 
 // Отправка сообщения в чат
-function sendChatMessage() {
+async function sendChatMessage() {
     const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.querySelector('.chat-send-btn');
+    
+    // Disable input until next admin message
+    if (chatInput) chatInput.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
+    
+    // Existing logic to add user message and send to API
     const message = chatInput.value.trim();
     
     if (!message) return;
     
-    // Добавляем сообщение пользователя
     addMessageToChat(message, true);
     chatInput.value = '';
     
@@ -269,6 +314,54 @@ function removeTypingIndicator() {
 // Отправка сообщения боту через OpenAI API
 async function sendMessageToBot(message) {
     try {
+        // Получаем данные пользователя из Telegram WebApp
+        const user = tg.initDataUnsafe?.user;
+        console.log('Telegram WebApp user data:', user);
+        console.log('tg.initDataUnsafe:', tg.initDataUnsafe);
+        console.log('tg.initData:', tg.initData);
+        
+        // Попробуем альтернативные способы получения данных пользователя
+        let user_id = 0;
+        let username = '';
+        let first_name = 'MiniApp';
+        
+        if (user) {
+            user_id = user.id || 0;
+            username = user.username || '';
+            first_name = user.first_name || 'MiniApp';
+        } else {
+            // Если данные пользователя недоступны, попробуем получить их из initData
+            try {
+                const initData = tg.initData;
+                console.log('Raw initData:', initData);
+                if (initData) {
+                    // Парсим initData для извлечения user_id
+                    const urlParams = new URLSearchParams(initData);
+                    const userParam = urlParams.get('user');
+                    if (userParam) {
+                        const userData = JSON.parse(decodeURIComponent(userParam));
+                        console.log('Parsed user data from initData:', userData);
+                        user_id = userData.id || 0;
+                        username = userData.username || '';
+                        first_name = userData.first_name || 'MiniApp';
+                    }
+                }
+            } catch (e) {
+                console.log('Error parsing initData:', e);
+            }
+            
+            // Если все еще нет user_id, используем случайный для локальной разработки
+            if (user_id === 0) {
+                // Генерируем случайный user_id для локальной разработки
+                user_id = Math.floor(Math.random() * 1000000) + 100000;
+                username = 'test_user_' + user_id;
+                first_name = 'Test User';
+                console.log('Using generated user_id for local development:', user_id);
+            }
+        }
+        
+        console.log('Final user data:', { user_id, username, first_name });
+        
         // Отправляем запрос к API
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -277,7 +370,10 @@ async function sendMessageToBot(message) {
             },
             body: JSON.stringify({
                 message: message,
-                history: chatHistory.slice(-10) // Отправляем последние 10 сообщений как контекст
+                history: chatHistory.slice(-10), // Отправляем последние 10 сообщений как контекст
+                user_id: user_id,
+                username: username,
+                first_name: first_name
             })
         });
         

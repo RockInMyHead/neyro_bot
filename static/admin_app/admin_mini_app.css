@@ -698,6 +698,95 @@ body {
     border-color: rgba(76, 175, 80, 0.3);
 }
 
+/* Стили для редактируемых полей */
+.content-item {
+    position: relative;
+}
+
+.content-edit {
+    background: rgba(255, 255, 255, 0.95);
+    color: #000000;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #4CAF50;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 40px;
+    width: 100%;
+    resize: vertical;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.content-edit:focus {
+    outline: none;
+    border-color: #2E7D32;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.edit-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.edit-btn:hover {
+    background: #2E7D32;
+    transform: scale(1.05);
+}
+
+.edit-btn.editing {
+    background: #FF9800;
+}
+
+.edit-btn.editing:hover {
+    background: #F57C00;
+}
+
+/* Стили для кнопок управления редактированием */
+.edit-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-small.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-small.btn-success:hover {
+    background: #2E7D32;
+}
+
+.btn-small.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-small.btn-secondary:hover {
+    background: #545b62;
+}
+
 /* Стили для редактирования промтов */
 .prompt-editor {
     margin-top: 25px;

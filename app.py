@@ -16,10 +16,69 @@ from openai_client import get_openai_response
 from image_queue_manager import queue_manager
 from batch_image_generator import batch_generator
 from gemini_client import generate_image_with_retry, GeminiQuotaError
+from content_filter import check_content_safety, sanitize_image_prompt
 from PIL import Image, ImageOps
 from io import BytesIO
+import threading
+import time
+import asyncio
+import requests
 import base64
-from content_filter import check_content_safety, sanitize_image_prompt
+from config import BOT_TOKEN
+
+def auto_generation_worker():
+    """Фоновый процесс автоматической генерации изображений"""
+    logger.info("🔄 Автоматическая генерация изображений запущена (каждые 15 секунд)")
+    
+    while True:
+        try:
+            # Проверяем, есть ли готовые батчи для обработки
+            current_batch = queue_manager.get_current_batch()
+            if current_batch and current_batch.status == 'ready':
+                logger.info(f"🎨 Обработка батча {current_batch.id} с {len(current_batch.requests)} запросами")
+                
+                # Обрабатываем батч
+                success = asyncio.run(batch_generator.process_next_batch())
+                if success:
+                    logger.info(f"✅ Батч {current_batch.id} успешно обработан")
+                else:
+                    logger.warning(f"⚠️ Не удалось обработать батч {current_batch.id}")
+            else:
+                logger.debug("📭 Нет готовых батчей для обработки")
+            
+            # Ждем 15 секунд перед следующей проверкой
+            time.sleep(15)
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка в автоматической генерации: {e}")
+            time.sleep(30)  # При ошибке ждем дольше
+
+def send_telegram_message(user_id, message):
+    """Отправляет сообщение пользователю через Telegram Bot API"""
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        data = {
+            'chat_id': user_id,
+            'text': message,
+            'parse_mode': 'Markdown'
+        }
+        response = requests.post(url, data=data, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('ok'):
+                logger.info(f"Сообщение успешно отправлено пользователю {user_id}")
+                return True
+            else:
+                logger.error(f"Ошибка Telegram API для пользователя {user_id}: {result.get('description')}")
+                return False
+        else:
+            logger.error(f"HTTP ошибка при отправке сообщения пользователю {user_id}: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Исключение при отправке сообщения пользователю {user_id}: {e}")
+        return False
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 # Enable CORS for API routes
@@ -46,12 +105,44 @@ def api_message():
         return response
     data = request.get_json()
     message = data.get('message', '').strip()
+    user_id = data.get('user_id', 0)
+    username = data.get('username', 'MiniApp')
+    first_name = data.get('first_name', 'MiniApp')
+    
+    # Сохраняем сообщение Mini App в базу
+    try:
+        message_db.add_message(
+            user_id=user_id,
+            username=username,
+            first_name=first_name,
+            message=message,
+            source='mini_app'
+        )
+        logger.info(f"Сообщение Mini App сохранено: user_id={user_id}, username={username}")
+        
+        # Добавляем запрос в очередь генерации изображений
+        try:
+            req_id = queue_manager.add_request(user_id, username, first_name, message)
+            logger.info(f"Запрос добавлен в очередь генерации: {req_id}")
+        except Exception as e:
+            logger.warning(f"Не удалось добавить запрос в очередь генерации: {e}")
+            
+    except Exception as e:
+        logger.warning(f"Не удалось сохранить сообщение Mini App: {e}")
     conversation_history = data.get('history', [])
     
     if not message:
         return jsonify(success=False, error="Message is required"), 400
     
-    ai_response = asyncio.run(get_openai_response(message, conversation_history))
+    # Безопасный вызов async функции
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        ai_response = loop.run_until_complete(get_openai_response(message, conversation_history))
+        loop.close()
+    except RuntimeError as e:
+        logger.error(f"Ошибка event loop в api_message: {e}")
+        ai_response = "Извините, произошла ошибка при обработке сообщения."
     
     response_data = {
         'success': True,
@@ -82,7 +173,9 @@ def admin_stats():
 @app.route('/api/admin/messages', methods=['GET'])
 def admin_messages():
     message_db.load_messages()
-    msgs = message_db.get_user_messages_only(15)
+    # Показываем только сообщения от Mini App (исключаем админские и бот)
+    all_user_msgs = message_db.get_user_messages_only(100)
+    msgs = [msg for msg in all_user_msgs if msg.get('source') == 'mini_app'][-15:]
     response = jsonify(success=True, messages=msgs, count=len(msgs), timestamp=int(time.time()*1000))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
@@ -130,8 +223,17 @@ def admin_mixed_text():
             mixed = 'Все сообщения содержат нежелательный контент и были отфильтрованы.'
         else:
             prompt = f"Сообщения пользователей: {'; '.join(filtered_texts)}"
-            # Synchronously call async OpenAI
-            mixed = asyncio.run(get_openai_response(prompt))
+            # Используем синхронный подход для вызова async функции
+            try:
+                # Создаем новый event loop для этого вызова
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                mixed = loop.run_until_complete(get_openai_response(prompt))
+                loop.close()
+            except RuntimeError as e:
+                logger.error(f"Ошибка event loop: {e}")
+                # Fallback: используем простой ответ
+                mixed = f"Обработано {len(filtered_texts)} сообщений пользователей."
     
     response = jsonify(success=True, mixed_text=mixed, timestamp=int(time.time()*1000))
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -191,6 +293,23 @@ def admin_batch_status():
     resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
 
+@app.route('/api/admin/latest-track', methods=['GET'])
+def admin_latest_track():
+    """Возвращает последний трек-сообщение"""
+    try:
+        message_db.load_messages()
+        # Фильтруем только админские сообщения треков
+        admin_msgs = [m for m in message_db.messages if m.get('source')=='admin']
+        if not admin_msgs:
+            return jsonify(success=True, message='', timestamp=int(time.time()*1000))
+        last = admin_msgs[-1]['message']
+        resp = jsonify(success=True, message=last, timestamp=int(time.time()*1000))
+        resp.headers.add('Access-Control-Allow-Origin', '*')
+        return resp
+    except Exception as e:
+        logger.exception("Ошибка получения последнего трека")
+        return jsonify(success=False, message=str(e)), 500
+
 # Admin generate image endpoint
 @app.route('/api/admin/generate-image', methods=['POST'])
 def admin_generate_image():
@@ -217,7 +336,16 @@ def admin_generate_image():
     clean_prompt = sanitize_image_prompt(prompt)
     
     try:
-        image_b64 = asyncio.run(generate_image_with_retry(clean_prompt))
+        # Используем безопасный вызов async функции
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            image_b64 = loop.run_until_complete(generate_image_with_retry(clean_prompt))
+            loop.close()
+        except RuntimeError as e:
+            logger.error(f"Ошибка event loop в генерации изображения: {e}")
+            raise Exception(f"Ошибка генерации: {e}")
+            
         img_data = base64.b64decode(image_b64)
         filename = f"image_{int(time.time())}.png"
         folder = os.getenv('GENERATED_IMAGES_FOLDER','generated_images')
@@ -283,8 +411,15 @@ def admin_generate_content():
         import asyncio
         from openai_client import get_openai_response
         
-        # Выполняем асинхронную генерацию
-        generated_content = asyncio.run(get_openai_response(prompt))
+        # Выполняем асинхронную генерацию безопасно
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            generated_content = loop.run_until_complete(get_openai_response(prompt))
+            loop.close()
+        except RuntimeError as e:
+            logger.error(f"Ошибка event loop в генерации контента: {e}")
+            generated_content = f"Ошибка генерации контента: {e}"
         
         if generated_content:
             logger.info(f"Контент сгенерирован ({content_type}): {generated_content[:100]}...")
@@ -314,19 +449,23 @@ def admin_send_concert_message():
         content = data.get('content', {}) or {}
         
         if message_type == 'track_message':
-            title = (content.get('title') or '').strip()
-            description = (content.get('description') or '').strip()
-            actors = (content.get('actors') or '').strip()
+            # content может быть либо строкой (готовое сообщение), либо объектом с полями
+            if isinstance(content, str):
+                message = content.strip()
+            else:
+                title = (content.get('title') or '').strip()
+                description = (content.get('description') or '').strip()
+                actors = (content.get('actors') or '').strip()
 
-            # Доп. защита: подставляем плейсхолдеры, чтобы не падать на пустых значениях
-            if not title:
-                title = 'Без названия'
-            if not description:
-                description = 'Описание отсутствует'
-            if not actors:
-                actors = '—'
-            
-            message = f"""📽️ **{title}**
+                # Доп. защита: подставляем плейсхолдеры, чтобы не падать на пустых значениях
+                if not title:
+                    title = 'Без названия'
+                if not description:
+                    description = 'Описание отсутствует'
+                if not actors:
+                    actors = '—'
+
+                message = f"""📽️ **{title}**
 
 {description}
 
@@ -346,13 +485,64 @@ P.S. Ответы анонимны."""
         else:
             return jsonify({"success": False, "message": "Неизвестный тип сообщения"}), 400
         
-        # Здесь можно добавить логику отправки сообщения в чат
-        # Пока просто логируем
-        logger.info(f"Концертное сообщение ({message_type}): {message[:200].replace(chr(10), ' ')}")
+        # Отправляем сообщение всем пользователям Mini App
+        logger.info(f"Отправка концертного сообщения ({message_type}) всем пользователям...")
+        logger.info(f"Сообщение: {message[:200].replace(chr(10), ' ')}")
+        
+        sent_count = 0
+        failed_count = 0
+        
+        # Получаем список всех пользователей из базы данных
+        try:
+            message_db.load_messages()
+            # Получаем уникальных пользователей из Mini App
+            mini_app_users = set()
+            all_messages = message_db.messages
+            logger.info(f"Всего сообщений в БД: {len(all_messages)}")
+            
+            for msg in all_messages:
+                logger.info(f"Сообщение: source={msg.get('source')}, user_id={msg.get('user_id')}")
+                if msg.get('source') == 'mini_app' and msg.get('user_id') and msg.get('user_id') != 0:
+                    mini_app_users.add(msg['user_id'])
+            
+            logger.info(f"Найдено {len(mini_app_users)} пользователей Mini App для отправки сообщения")
+            logger.info(f"ID пользователей: {list(mini_app_users)}")
+            
+            # Отправляем сообщение каждому пользователю через Telegram Bot
+            for user_id in mini_app_users:
+                try:
+                    logger.info(f"Отправка сообщения пользователю {user_id}")
+                    success = send_telegram_message(user_id, message)
+                    if success:
+                        sent_count += 1
+                    else:
+                        failed_count += 1
+                except Exception as e:
+                    logger.error(f"Ошибка отправки сообщения пользователю {user_id}: {e}")
+                    failed_count += 1
+            
+            logger.info(f"Отправлено сообщений: {sent_count}, ошибок: {failed_count}")
+            
+        except Exception as e:
+            logger.error(f"Ошибка при отправке концертного сообщения: {e}")
+        
+        # Save admin message to DB
+        try:
+            message_db.add_message(
+                user_id=0,
+                username='Admin',
+                first_name='Admin',
+                message=message,
+                source='admin'
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось сохранить админское сообщение: {e}")
         
         return jsonify({
             "success": True, 
-            "message": f"Сообщение типа '{message_type}' отправлено"
+            "message": f"Сообщение типа '{message_type}' отправлено {sent_count} пользователям",
+            "sent_count": sent_count,
+            "failed_count": failed_count
         })
         
     except Exception as e:
@@ -387,36 +577,17 @@ def admin_update_base_prompt():
         logger.error(f"Ошибка обновления базового промта: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-def admin_send_concert_message():
-    """Отправляет сообщения концерта всем пользователям"""
-    try:
-        data = request.get_json()
-        
-        if not data or 'type' not in data or 'content' not in data:
-            return jsonify({"success": False, "message": "Неверные данные"}), 400
-        
-        message_type = data['type']
-        content = data['content']
-        
-        # Здесь можно добавить логику отправки сообщений всем пользователям
-        # Пока просто логируем и возвращаем успех
-        logger.info(f"Концертное сообщение ({message_type}): {content[:100]}...")
-        
-        # В будущем здесь будет интеграция с Telegram Bot API для массовой рассылки
-        # или сохранение в базу данных для последующей отправки
-        
-        return jsonify({
-            "success": True, 
-            "message": f"Сообщение типа '{message_type}' подготовлено к отправке"
-        })
-        
-    except Exception as e:
-        logger.error(f"Ошибка отправки концертного сообщения: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
-
+# Запуск сервера
+if __name__ == '__main__':
     # Debug: print registered routes
     print('Registered routes:')
     for rule in app.url_map.iter_rules():
         print(f"{rule.endpoint}: {rule}")
+    
+    # Запускаем фоновый поток для автоматической генерации изображений
+    auto_thread = threading.Thread(target=auto_generation_worker, daemon=True)
+    auto_thread.start()
+    logger.info("🚀 Фоновый поток автоматической генерации запущен")
+    
     port = int(os.getenv('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)

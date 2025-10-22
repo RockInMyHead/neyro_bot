@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ панель - Нейро-бот</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='admin_app/admin_mini_app.css') }}?v=2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_app/admin_mini_app.css') }}?v=3">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
 </head>
 <body>
@@ -121,21 +121,41 @@
                             <div class="content-item">
                                 <label>Название фильма:</label>
                                 <div class="content-display" id="current-prompt-title">Загрузка...</div>
+                                <textarea class="content-edit" id="current-prompt-title-edit" style="display: none;"></textarea>
+                                <button class="btn-small edit-btn" onclick="toggleEdit('current-prompt-title')">✏️</button>
                             </div>
                             <div class="content-item">
                                 <label>Короткое описание:</label>
                                 <div class="content-display" id="generated-movie-description">Загрузка...</div>
+                                <textarea class="content-edit" id="generated-movie-description-edit" style="display: none;"></textarea>
+                                <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-description')">✏️</button>
                             </div>
                             <div class="content-item">
                                 <label>Актёры/персонажи:</label>
                                 <div class="content-display" id="generated-movie-actors">Загрузка...</div>
+                                <textarea class="content-edit" id="generated-movie-actors-edit" style="display: none;"></textarea>
+                                <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-actors')">✏️</button>
                             </div>
+                        </div>
+                        <div class="edit-controls" style="margin-top: 10px;">
+                            <button class="btn-small btn-success" onclick="saveAllEdits()">💾 Сохранить все</button>
+                            <button class="btn-small btn-secondary" onclick="cancelAllEdits()">❌ Отменить все</button>
                         </div>
                         <button class="btn btn-primary" onclick="sendTrackMessage()">🎵 Отправить сообщение перед треком</button>
                     </div>
                     
                     <div class="concert-section">
-                        <h3>🎉 Завершение концерта</h3>
+                        <h3 style="color: #000000;">🎉 Завершение концерта</h3>
+                        <div class="content-item">
+                            <label>Финальное сообщение:</label>
+                            <div class="content-display" id="concert-end-message">Спасибо, что были с нами — Main Strings Orchestra × Neuroevent.
+Оставьте короткий отзыв — это помогает нам становиться лучше!
+P.S. Ответы анонимны.</div>
+                            <textarea class="content-edit" id="concert-end-message-edit" style="display: none;">Спасибо, что были с нами — Main Strings Orchestra × Neuroevent.
+Оставьте короткий отзыв — это помогает нам становиться лучше!
+P.S. Ответы анонимны.</textarea>
+                            <button class="btn-small edit-btn" onclick="toggleEdit('concert-end-message')">✏️</button>
+                        </div>
                         <button class="btn btn-success" onclick="sendConcertEnd()">🏁 Отправить финальное сообщение</button>
                     </div>
                 </div>
@@ -156,6 +176,6 @@
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=5"></script>
 </body>
 </html>

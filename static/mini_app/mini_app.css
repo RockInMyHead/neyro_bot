@@ -543,3 +543,10 @@ body {
 @media (prefers-color-scheme: light) {
     /* You can add light theme support here if needed */
 }
+
+.chat-input-container input:disabled, .chat-input-container button:disabled {
+    background: #f0f0f0 !important;
+    color: #888 !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
