@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.backgroundColor = tg.backgroundColor || '#ffffff';
         document.body.style.color = tg.textColor || '#000000';
         
-        console.log('🔧 Админ Mini App инициализирован');
         
         // Запускаем автообновление
         startAutoUpdate();
@@ -56,7 +55,6 @@ function initializePromptQueue() {
     // Загружаем список промтов
     loadPromptList();
     
-    console.log('📋 Очередь промтов инициализирована:', promptQueue);
 }
 
 function startAutoUpdate() {
@@ -69,7 +67,6 @@ function startAutoUpdate() {
         }
     }, 15000); // 15 секунд
     
-    console.log('🔄 Автообновление запущено (каждые 15 секунд)');
 }
 
 // Остановка автообновления
@@ -426,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 promptText.textContent = 'Введите ваш пользовательский промт...';
             } else {
                 customPromptGroup.style.display = 'none';
-                promptText.textContent = basePrompts[selectedValue] || basePrompts.default;
+                promptText.textContent = basePrompts[selectedValue] || basePrompts.pirates;
             }
         });
         
@@ -510,7 +507,6 @@ function nextPrompt() {
     
     showNotification(`Переход к следующему промту: ${basePrompts[promptQueue[0]]?.split('\n')[0] || 'Неизвестный промт'}`, 'success');
     
-    console.log('➡️ Переход к следующему промту. Новая очередь:', promptQueue);
 }
 
 // Функция для обновления предварительного просмотра промта
@@ -541,18 +537,19 @@ function loadPromptList() {
     
     // Создаем элементы для каждого промта в порядке очереди
     promptQueue.forEach((key, index) => {
-        const promptItem = createPromptItem(key, basePrompts[key], index === currentPromptIndex);
+        const promptItem = createPromptItem(key, basePrompts[key], index === currentPromptIndex, index);
         promptList.appendChild(promptItem);
     });
 }
 
-function createPromptItem(key, content, isCurrent = false) {
+function createPromptItem(key, content, isCurrent = false, index) {
     const item = document.createElement('div');
     item.className = 'prompt-item';
     if (isCurrent) {
         item.classList.add('current');
     }
     item.draggable = true;
+    item.dataset.index = index;
     item.dataset.key = key;
     
     const lines = content.split('\n');
@@ -563,8 +560,8 @@ function createPromptItem(key, content, isCurrent = false) {
         <div class="prompt-item-header">
             <div class="prompt-item-title">${title}</div>
             <div class="prompt-item-actions">
-                <button class="prompt-item-btn edit" onclick="editPrompt('${key}', ${index})">✏️</button>
-                <button class="prompt-item-btn delete" onclick="deletePrompt('${key}', ${index})">🗑️</button>
+                <button class="prompt-item-btn edit" onclick="editPrompt('${key}')">✏️</button>
+                <button class="prompt-item-btn delete" onclick="deletePrompt('${key}')">🗑️</button>
             </div>
         </div>
         <div class="prompt-item-content" onclick="togglePromptContent(this)">
@@ -574,7 +571,7 @@ function createPromptItem(key, content, isCurrent = false) {
             <input type="text" id="edit-title-${key}" value="${title}" placeholder="Название промта">
             <textarea id="edit-content-${key}" placeholder="Содержимое промта">${content}</textarea>
             <div class="prompt-edit-actions">
-                <button class="save" onclick="savePrompt('${key}', ${index})">💾 Сохранить</button>
+                <button class="save" onclick="savePrompt('${key}')">💾 Сохранить</button>
                 <button class="cancel" onclick="cancelEdit('${key}')">❌ Отмена</button>
             </div>
         </div>
@@ -593,7 +590,7 @@ function togglePromptContent(element) {
     element.classList.toggle('expanded');
 }
 
-function editPrompt(key, index) {
+function editPrompt(key) {
     const form = document.getElementById(`edit-form-${key}`);
     if (form) {
         form.classList.add('active');
@@ -607,7 +604,7 @@ function cancelEdit(key) {
     }
 }
 
-function savePrompt(key, index) {
+function savePrompt(key) {
     const titleInput = document.getElementById(`edit-title-${key}`);
     const contentInput = document.getElementById(`edit-content-${key}`);
     
@@ -633,7 +630,7 @@ function savePrompt(key, index) {
     showNotification(`Промт "${newTitle}" успешно обновлен!`, 'success');
 }
 
-function deletePrompt(key, index) {
+function deletePrompt(key) {
     if (confirm('Вы уверены, что хотите удалить этот промт?')) {
         delete basePrompts[key];
         loadPromptList();
