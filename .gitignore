@@ -54,6 +54,7 @@ logs/
 generated_images/
 *.png
 !static/mini_app/neuroevent_logo.png
+!Neuroevent_4_cropped.png
 *.jpg
 *.jpeg
 
