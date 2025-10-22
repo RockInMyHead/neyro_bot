@@ -99,32 +99,6 @@
                 <button class="btn btn-secondary" onclick="refreshMessages()">🔄 Обновить</button>
             </div>
 
-            <!-- Очередь генерации изображений -->
-            <div class="card">
-                <h2>🎬 Очередь генерации изображений</h2>
-                
-                <!-- Статус автообработки -->
-                <div class="auto-generation-status">
-                    <div class="status-indicator">
-                        <div class="status-dot auto-active"></div>
-                        <div class="status-text">🤖 Автоматическая генерация активна (каждые 15 секунд)</div>
-                    </div>
-                </div>
-                
-                <div class="queue-controls">
-                    <div class="queue-stats" id="queueStats">
-                        <p>Загрузка статистики очереди...</p>
-                    </div>
-                    <div class="queue-actions">
-                        <button class="btn btn-primary" onclick="processNextBatch()">🎯 Обработать следующий батч</button>
-                        <button class="btn btn-info" onclick="refreshQueueStats()">🔄 Обновить статистику</button>
-                    </div>
-                    <div class="batch-status" id="batchStatus" style="display: none;">
-                        <h3>📋 Статус текущего батча</h3>
-                        <div id="batchStatusContent"></div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Управление -->
             <div class="card">

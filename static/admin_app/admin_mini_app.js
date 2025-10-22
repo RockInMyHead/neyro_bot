@@ -37,13 +37,11 @@ async function loadInitialData() {
         await refreshStats();
         await refreshMessages();
         await generateMixedText();
-        await refreshQueueStats();
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
     }
 }
 
-// Автообновление каждые 15 секунд
 function startAutoUpdate() {
     updateInterval = setInterval(async () => {
         try {
@@ -398,145 +396,11 @@ function formatFileSize(bytes) {
 }
 
 // Экспорт функций для использования в HTML
-// ===== ФУНКЦИИ ОЧЕРЕДИ ГЕНЕРАЦИИ ИЗОБРАЖЕНИЙ =====
 
-async function refreshQueueStats() {
-    try {
-        const response = await fetch('/api/admin/queue/stats', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            displayQueueStats(data.stats);
-        } else {
-            showNotification('Ошибка загрузки статистики очереди', 'error');
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки статистики очереди:', error);
-        showNotification('Ошибка загрузки статистики очереди', 'error');
-    }
-}
 
-function displayQueueStats(stats) {
-    const queueStatsDiv = document.getElementById('queueStats');
-    
-    queueStatsDiv.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-item">
-                <h4>📝 Запросы</h4>
-                <p><strong>Всего:</strong> ${stats.total_requests}</p>
-                <p><strong>Ожидают:</strong> ${stats.pending_requests}</p>
-                <p><strong>В батче:</strong> ${stats.in_batch_requests}</p>
-                <p><strong>Обрабатываются:</strong> ${stats.processing_requests}</p>
-                <p><strong>Завершены:</strong> ${stats.completed_requests}</p>
-                <p><strong>Ошибки:</strong> ${stats.failed_requests}</p>
-            </div>
-            <div class="stat-item">
-                <h4>🎯 Батчи</h4>
-                <p><strong>Всего:</strong> ${stats.total_batches}</p>
-                <p><strong>Ожидают:</strong> ${stats.pending_batches}</p>
-                <p><strong>Обрабатываются:</strong> ${stats.processing_batches}</p>
-                <p><strong>Завершены:</strong> ${stats.completed_batches}</p>
-                <p><strong>Ошибки:</strong> ${stats.failed_batches}</p>
-                <p><strong>Размер батча:</strong> ${stats.batch_size}</p>
-            </div>
-            <div class="stat-item">
-                <h4>🔄 Текущий батч</h4>
-                <p><strong>ID:</strong> ${stats.current_batch_id || 'Нет'}</p>
-            </div>
-        </div>
-    `;
-}
 
-async function processNextBatch() {
-    const btn = event.target;
-    const originalText = btn.textContent;
-    
-    try {
-        btn.disabled = true;
-        btn.textContent = '⏳ Обрабатываем...';
-        
-        const response = await fetch('/api/admin/queue/process', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showNotification('Батч успешно обработан!', 'success');
-            refreshQueueStats();
-            refreshBatchStatus();
-        } else {
-            showNotification(data.message || 'Ошибка обработки батча', 'warning');
-        }
-    } catch (error) {
-        console.error('Ошибка обработки батча:', error);
-        showNotification('Ошибка обработки батча', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-    }
-}
 
-async function refreshBatchStatus() {
-    try {
-        const response = await fetch('/api/admin/queue/batch-status', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        
-        if (data.success && data.batch_status) {
-            displayBatchStatus(data.batch_status);
-        } else {
-            document.getElementById('batchStatus').style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки статуса батча:', error);
-    }
-}
 
-function displayBatchStatus(batchStatus) {
-    const batchStatusDiv = document.getElementById('batchStatus');
-    const batchStatusContent = document.getElementById('batchStatusContent');
-    
-    batchStatusDiv.style.display = 'block';
-    
-    const statusColor = {
-        'pending': '#ffa500',
-        'processing': '#007bff',
-        'completed': '#28a745',
-        'failed': '#dc3545'
-    }[batchStatus.status] || '#6c757d';
-    
-    batchStatusContent.innerHTML = `
-        <div class="batch-info">
-            <p><strong>ID батча:</strong> ${batchStatus.batch_id}</p>
-            <p><strong>Статус:</strong> <span style="color: ${statusColor}">${batchStatus.status}</span></p>
-            <p><strong>Запросов в батче:</strong> ${batchStatus.requests_count}</p>
-            <p><strong>Создан:</strong> ${new Date(batchStatus.created_at * 1000).toLocaleString()}</p>
-            ${batchStatus.started_at ? `<p><strong>Начат:</strong> ${new Date(batchStatus.started_at * 1000).toLocaleString()}</p>` : ''}
-            ${batchStatus.completed_at ? `<p><strong>Завершен:</strong> ${new Date(batchStatus.completed_at * 1000).toLocaleString()}</p>` : ''}
-            ${batchStatus.mixed_text ? `<p><strong>Миксированный текст:</strong> ${batchStatus.mixed_text.substring(0, 100)}...</p>` : ''}
-            ${batchStatus.generated_images_count > 0 ? `<p><strong>Сгенерировано изображений:</strong> ${batchStatus.generated_images_count}</p>` : ''}
-        </div>
-    `;
-}
-
-// Добавляем автообновление статистики очереди
-setInterval(() => {
-    refreshQueueStats();
-    refreshBatchStatus();
-}, 30000); // Каждые 30 секунд
 
 window.refreshStats = refreshStats;
 window.refreshMessages = refreshMessages;
@@ -545,6 +409,3 @@ window.resetStats = resetStats;
 window.exportData = exportData;
 window.generateImageFromMix = generateImageFromMix;
 window.downloadGeneratedImage = downloadGeneratedImage;
-window.refreshQueueStats = refreshQueueStats;
-window.processNextBatch = processNextBatch;
-window.refreshBatchStatus = refreshBatchStatus;
