@@ -36,16 +36,30 @@
 
             <!-- Выбор базового промта -->
             <div class="card">
-                <h2>🤖 Базовый промт</h2>
+                <h2>🎬 Базовые промты фильмов</h2>
                 <div class="prompt-selector">
                     <div class="form-group">
-                        <label for="base-prompt">Выберите базовый промт:</label>
+                        <label for="base-prompt">Выберите промт фильма:</label>
                         <select id="base-prompt" class="prompt-select">
-                            <option value="default">По умолчанию (концерт)</option>
-                            <option value="creative">Творческий</option>
-                            <option value="technical">Технический</option>
-                            <option value="emotional">Эмоциональный</option>
-                            <option value="minimal">Минималистичный</option>
+                            <option value="pirates">Пираты Карибского моря</option>
+                            <option value="got">Игра престолов</option>
+                            <option value="sherlock">Шерлок Холмс</option>
+                            <option value="ghostbusters">Охотники за приведениями</option>
+                            <option value="interstellar">Интерстеллар</option>
+                            <option value="leon">Леон</option>
+                            <option value="batman">Бэтмен</option>
+                            <option value="rocky">Рокки</option>
+                            <option value="gladiator">Гладиатор</option>
+                            <option value="mission">Миссия: невыполнима</option>
+                            <option value="professionnel">Le Professionnel (1981)</option>
+                            <option value="starwars">Звёздные войны</option>
+                            <option value="killbill">Убить Билла</option>
+                            <option value="love">Мы. Верим в любовь</option>
+                            <option value="intouchables">1+1</option>
+                            <option value="bond">Агент 007</option>
+                            <option value="pulp">Криминальное чтиво</option>
+                            <option value="soviet">Свой среди чужих, чужой среди своих</option>
+                            <option value="swan">Лебединое озеро</option>
                             <option value="custom">Пользовательский</option>
                         </select>
                     </div>
@@ -58,11 +72,21 @@
                     <div class="prompt-preview" id="prompt-preview">
                         <h4>Предварительный просмотр:</h4>
                         <div class="prompt-text" id="prompt-text">
-                            Вы виртуальный помощник на концерте Main Strings Orchestra. Отвечайте кратко и по делу, помогайте зрителям наслаждаться музыкой.
+                            Пираты Карибского моря<br>
+                            Мрачный кинематографичный реализм во вселенной Пиратов карибского моря; деревянные корабли с парусами и пушками; пираты; морская дымка, контраст, рим-свет; палитра: сталь/свинец воды, изумруд/бирюза, мох, мокрое дерево, патина бронзы, янтарные блики; фактуры: соль на канатах, камень, рваная парусина, брызги; широкий план, масштаб, без крупных лиц.
                         </div>
                     </div>
                     
                     <button class="btn btn-primary" onclick="updateBasePrompt()">🔄 Обновить промт</button>
+                </div>
+                
+                <!-- Редактирование промтов -->
+                <div class="prompt-editor">
+                    <h3>✏️ Редактирование промтов</h3>
+                    <div class="prompt-list" id="prompt-list">
+                        <!-- Промты будут загружены динамически -->
+                    </div>
+                    <button class="btn btn-secondary" onclick="addNewPrompt()">➕ Добавить новый промт</button>
                 </div>
             </div>
 

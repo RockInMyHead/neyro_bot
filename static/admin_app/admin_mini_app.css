@@ -654,13 +654,171 @@ body {
     border-left: 3px solid #4CAF50;
 }
 
-/* Адаптивность для промтов */
-@media (max-width: 768px) {
-    .prompt-selector {
-        gap: 12px;
-    }
-    
-    .prompt-preview {
-        padding: 12px;
-    }
+/* Стили для редактирования промтов */
+.prompt-editor {
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prompt-editor h3 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.prompt-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: move;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.prompt-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.prompt-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.prompt-item-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.prompt-item-title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+}
+
+.prompt-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.prompt-item-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.prompt-item-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.prompt-item-btn.edit {
+    border-color: #4CAF50;
+}
+
+.prompt-item-btn.delete {
+    border-color: #f44336;
+}
+
+.prompt-item-content {
+    color: #e0e0e0;
+    font-size: 12px;
+    line-height: 1.4;
+    max-height: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prompt-item-content.expanded {
+    max-height: none;
+}
+
+.prompt-edit-form {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.prompt-edit-form.active {
+    display: block;
+}
+
+.prompt-edit-form input,
+.prompt-edit-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 12px;
+}
+
+.prompt-edit-form textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.prompt-edit-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.prompt-edit-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.prompt-edit-actions .save {
+    background: #4CAF50;
+    color: white;
+}
+
+.prompt-edit-actions .cancel {
+    background: #f44336;
+    color: white;
+}
+
+/* Drag and drop стили */
+.prompt-list.drag-over {
+    background: rgba(76, 175, 80, 0.1);
+    border: 2px dashed #4CAF50;
+}
+
+.drop-indicator {
+    height: 2px;
+    background: #4CAF50;
+    margin: 5px 0;
+    border-radius: 1px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.drop-indicator.active {
+    opacity: 1;
 }
