@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Загрузка начальных данных
 async function loadInitialData() {
     try {
-        await refreshStats();
         await refreshMessages();
         await generateMixedText();
     } catch (error) {
@@ -45,7 +44,6 @@ async function loadInitialData() {
 function startAutoUpdate() {
     updateInterval = setInterval(async () => {
         try {
-            await refreshStats();
             await refreshMessages();
             await generateMixedText();
         } catch (error) {
@@ -65,35 +63,6 @@ function stopAutoUpdate() {
     }
 }
 
-// Обновление статистики
-async function refreshStats() {
-    try {
-        const response = await fetch('/api/admin/stats');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            updateStatsDisplay(data.stats);
-        } else {
-            throw new Error(data.error || 'Ошибка получения статистики');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка обновления статистики:', error);
-        showNotification('Ошибка загрузки статистики', 'error');
-    }
-}
-
-// Обновление отображения статистики
-function updateStatsDisplay(stats) {
-    document.getElementById('total-messages').textContent = stats.total_messages || 0;
-    document.getElementById('unique-users').textContent = stats.unique_users_count || 0;
-    document.getElementById('recent-messages').textContent = stats.recent_messages_count || 0;
-    document.getElementById('uptime').textContent = `${(stats.uptime_hours || 0).toFixed(1)}ч`;
-}
 
 // Обновление сообщений
 async function refreshMessages() {
@@ -189,7 +158,6 @@ async function resetStats() {
         
         if (data.success) {
             showNotification('Статистика сброшена', 'success');
-            await refreshStats();
             await refreshMessages();
         } else {
             throw new Error(data.error || 'Ошибка сброса статистики');
@@ -402,7 +370,6 @@ function formatFileSize(bytes) {
 
 
 
-window.refreshStats = refreshStats;
 window.refreshMessages = refreshMessages;
 window.generateMixedText = generateMixedText;
 window.resetStats = resetStats;
