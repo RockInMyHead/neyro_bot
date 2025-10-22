@@ -654,6 +654,25 @@ body {
     border-left: 3px solid #4CAF50;
 }
 
+/* Стили для кнопок управления промтами */
+.prompt-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.prompt-controls .btn {
+    flex: 1;
+}
+
+/* Информация об очереди */
+.queue-info {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
 /* Стили для редактирования промтов */
 .prompt-editor {
     margin-top: 25px;
@@ -688,6 +707,25 @@ body {
 .prompt-item:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+.prompt-item.current {
+    border: 2px solid #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.prompt-item.current::before {
+    content: "🎯 ТЕКУЩИЙ";
+    position: absolute;
+    top: -8px;
+    right: 8px;
+    background: #4CAF50;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
 }
 
 .prompt-item.dragging {

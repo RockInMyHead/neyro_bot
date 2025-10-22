@@ -2,6 +2,11 @@
 let tg = null;
 let updateInterval = null;
 
+// Переменные для системы очереди промтов
+let currentPromptIndex = 0;
+let promptQueue = [];
+let isEditing = false;
+
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
     if (Telegram.WebApp) {
@@ -36,9 +41,22 @@ async function loadInitialData() {
     try {
         await refreshMessages();
         await generateMixedText();
+        initializePromptQueue();
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
     }
+}
+
+// Инициализация очереди промтов
+function initializePromptQueue() {
+    // Создаем очередь из всех доступных промтов
+    promptQueue = Object.keys(basePrompts).filter(key => key !== 'custom');
+    currentPromptIndex = 0;
+    
+    // Загружаем список промтов
+    loadPromptList();
+    
+    console.log('📋 Очередь промтов инициализирована:', promptQueue);
 }
 
 function startAutoUpdate() {
@@ -471,6 +489,49 @@ async function updateBasePrompt() {
     }
 }
 
+// Функция для перехода к следующему промту
+function nextPrompt() {
+    if (promptQueue.length === 0) {
+        showNotification('Очередь промтов пуста', 'warning');
+        return;
+    }
+    
+    // Перемещаем текущий промт в конец очереди
+    const currentPrompt = promptQueue[currentPromptIndex];
+    promptQueue.splice(currentPromptIndex, 1);
+    promptQueue.push(currentPrompt);
+    
+    // Обновляем индекс (остается 0, так как следующий промт теперь первый)
+    currentPromptIndex = 0;
+    
+    // Обновляем отображение
+    loadPromptList();
+    updatePromptPreview();
+    
+    showNotification(`Переход к следующему промту: ${basePrompts[promptQueue[0]]?.split('\n')[0] || 'Неизвестный промт'}`, 'success');
+    
+    console.log('➡️ Переход к следующему промту. Новая очередь:', promptQueue);
+}
+
+// Функция для обновления предварительного просмотра промта
+function updatePromptPreview() {
+    const promptText = document.getElementById('prompt-text');
+    const promptSelect = document.getElementById('base-prompt');
+    
+    if (promptText && promptQueue.length > 0) {
+        const currentPromptKey = promptQueue[currentPromptIndex];
+        const currentPromptContent = basePrompts[currentPromptKey];
+        
+        if (currentPromptContent) {
+            promptText.innerHTML = currentPromptContent.replace(/\n/g, '<br>');
+        }
+        
+        if (promptSelect) {
+            promptSelect.value = currentPromptKey;
+        }
+    }
+}
+
 // Функции для редактирования промтов
 function loadPromptList() {
     const promptList = document.getElementById('prompt-list');
@@ -478,17 +539,20 @@ function loadPromptList() {
     
     promptList.innerHTML = '';
     
-    Object.entries(basePrompts).forEach(([key, content], index) => {
-        const promptItem = createPromptItem(key, content, index);
+    // Создаем элементы для каждого промта в порядке очереди
+    promptQueue.forEach((key, index) => {
+        const promptItem = createPromptItem(key, basePrompts[key], index === currentPromptIndex);
         promptList.appendChild(promptItem);
     });
 }
 
-function createPromptItem(key, content, index) {
+function createPromptItem(key, content, isCurrent = false) {
     const item = document.createElement('div');
     item.className = 'prompt-item';
+    if (isCurrent) {
+        item.classList.add('current');
+    }
     item.draggable = true;
-    item.dataset.index = index;
     item.dataset.key = key;
     
     const lines = content.split('\n');
@@ -505,7 +569,7 @@ function createPromptItem(key, content, index) {
         </div>
         <div class="prompt-item-content" onclick="togglePromptContent(this)">
             ${description}
-        </div>
+            </div>
         <div class="prompt-edit-form" id="edit-form-${key}">
             <input type="text" id="edit-title-${key}" value="${title}" placeholder="Название промта">
             <textarea id="edit-content-${key}" placeholder="Содержимое промта">${content}</textarea>
@@ -642,25 +706,33 @@ function handleDrop(e) {
     this.classList.remove('drag-over');
     
     if (draggedElement && draggedElement !== this) {
-        const dropIndex = parseInt(this.dataset.index);
+        const draggedKey = draggedElement.dataset.key;
+        const dropKey = this.dataset.key;
         
-        // Перемещаем элементы в массиве
-        const promptEntries = Object.entries(basePrompts);
-        const draggedItem = promptEntries[draggedIndex];
-        promptEntries.splice(draggedIndex, 1);
-        promptEntries.splice(dropIndex, 0, draggedItem);
+        if (draggedKey === dropKey) return;
         
-        // Обновляем объект промтов
-        Object.keys(basePrompts).forEach(key => delete basePrompts[key]);
-        promptEntries.forEach(([key, value]) => {
-            basePrompts[key] = value;
-        });
+        // Находим индексы в очереди
+        const draggedIndex = promptQueue.indexOf(draggedKey);
+        const dropIndex = promptQueue.indexOf(dropKey);
+        
+        if (draggedIndex === -1 || dropIndex === -1) return;
+        
+        // Перемещаем элементы в очереди
+        promptQueue.splice(draggedIndex, 1);
+        promptQueue.splice(dropIndex, 0, draggedKey);
+        
+        // Обновляем индекс текущего промта
+        if (draggedIndex === currentPromptIndex) {
+            currentPromptIndex = dropIndex;
+        } else if (dropIndex === currentPromptIndex) {
+            currentPromptIndex = draggedIndex;
+        }
         
         // Перезагружаем список
         loadPromptList();
-        updatePromptSelect();
+        updatePromptPreview();
         
-        showNotification('Порядок промтов обновлен!', 'success');
+        showNotification('Порядок промтов в очереди обновлен!', 'success');
     }
 }
 
@@ -870,3 +942,4 @@ window.cancelEdit = cancelEdit;
 window.sendTrackMessage = sendTrackMessage;
 window.sendAudienceResponse = sendAudienceResponse;
 window.sendConcertEnd = sendConcertEnd;
+window.nextPrompt = nextPrompt;
