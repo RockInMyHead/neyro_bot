@@ -304,18 +304,27 @@ def admin_generate_content():
 def admin_send_concert_message():
     """Отправляет концертное сообщение в чат"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
+        logger.info(f"/api/admin/send-concert-message payload: {data}")
         
-        if not data or 'type' not in data:
+        if 'type' not in data:
             return jsonify({"success": False, "message": "Неверные данные"}), 400
         
         message_type = data['type']
-        content = data.get('content', {})
+        content = data.get('content', {}) or {}
         
         if message_type == 'track_message':
-            title = content.get('title', '')
-            description = content.get('description', '')
-            actors = content.get('actors', '')
+            title = (content.get('title') or '').strip()
+            description = (content.get('description') or '').strip()
+            actors = (content.get('actors') or '').strip()
+
+            # Доп. защита: подставляем плейсхолдеры, чтобы не падать на пустых значениях
+            if not title:
+                title = 'Без названия'
+            if not description:
+                description = 'Описание отсутствует'
+            if not actors:
+                actors = '—'
             
             message = f"""📽️ **{title}**
 
@@ -339,7 +348,7 @@ P.S. Ответы анонимны."""
         
         # Здесь можно добавить логику отправки сообщения в чат
         # Пока просто логируем
-        logger.info(f"Концертное сообщение ({message_type}): {message[:100]}...")
+        logger.info(f"Концертное сообщение ({message_type}): {message[:200].replace(chr(10), ' ')}")
         
         return jsonify({
             "success": True, 
@@ -347,8 +356,8 @@ P.S. Ответы анонимны."""
         })
         
     except Exception as e:
-        logger.error(f"Ошибка отправки концертного сообщения: {e}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        logger.exception("Ошибка отправки концертного сообщения")
+        return jsonify({"success": False, "message": f"Server error: {str(e)}"}), 500
 
 @app.route('/api/admin/update-base-prompt', methods=['POST'])
 def admin_update_base_prompt():
