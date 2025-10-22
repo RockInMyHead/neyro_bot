@@ -756,22 +756,25 @@ async function generateConcertContent() {
         return;
     }
     
-    // Показываем индикатор загрузки
-    updateConcertDisplay('Генерация...', 'Генерация...', 'Генерация...');
+    // Показываем название промта (первая строка)
+    const promptTitle = currentPromptContent.split('\n')[0];
+    updatePromptTitle(promptTitle);
+    
+    // Показываем индикатор загрузки для остальных полей
+    updateConcertDisplay('', 'Генерация...', 'Генерация...');
     
     try {
-        // Генерируем все контенты параллельно
-        const [titleResult, descriptionResult, actorsResult] = await Promise.all([
-            generateContentByType('movie_title', currentPromptContent),
+        // Генерируем только описание и актёров параллельно
+        const [descriptionResult, actorsResult] = await Promise.all([
             generateContentByType('movie_description', currentPromptContent),
             generateContentByType('movie_actors', currentPromptContent)
         ]);
         
-        updateConcertDisplay(titleResult, descriptionResult, actorsResult);
+        updateConcertDisplay('', descriptionResult, actorsResult);
         
     } catch (error) {
         console.error('Ошибка генерации концертного контента:', error);
-        updateConcertDisplay('Ошибка генерации', 'Ошибка генерации', 'Ошибка генерации');
+        updateConcertDisplay('', 'Ошибка генерации', 'Ошибка генерации');
     }
 }
 
@@ -780,9 +783,6 @@ async function generateContentByType(type, promptContent) {
     let prompt = '';
     
     switch (type) {
-        case 'movie_title':
-            prompt = `На основе этого кинематографического стиля: "${promptContent}"\n\nСгенерируй название фильма в этом стиле. Ответь только названием фильма, без дополнительных объяснений.`;
-            break;
         case 'movie_description':
             prompt = `На основе этого кинематографического стиля: "${promptContent}"\n\nНапиши короткое описание фильма (2-3 предложения) о чем он, какие вопросы поднимает. Стиль должен соответствовать кинематографическому направлению.`;
             break;
@@ -818,13 +818,19 @@ async function generateContentByType(type, promptContent) {
     }
 }
 
+// Функция для обновления названия промта
+function updatePromptTitle(title) {
+    const titleElement = document.getElementById('current-prompt-title');
+    if (titleElement) {
+        titleElement.textContent = title;
+    }
+}
+
 // Функция для обновления отображения концертного контента
 function updateConcertDisplay(title, description, actors) {
-    const titleElement = document.getElementById('generated-movie-title');
     const descriptionElement = document.getElementById('generated-movie-description');
     const actorsElement = document.getElementById('generated-movie-actors');
     
-    if (titleElement) titleElement.textContent = title;
     if (descriptionElement) descriptionElement.textContent = description;
     if (actorsElement) actorsElement.textContent = actors;
 }
@@ -1006,7 +1012,7 @@ async function generateAIComment() {
 async function sendTrackMessage() {
     console.log('sendTrackMessage вызвана');
     
-    const movieTitle = document.getElementById('generated-movie-title');
+    const movieTitle = document.getElementById('current-prompt-title');
     const movieDescription = document.getElementById('generated-movie-description');
     const movieActors = document.getElementById('generated-movie-actors');
     
