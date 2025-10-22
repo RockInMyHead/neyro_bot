@@ -363,23 +363,137 @@ function formatFileSize(bytes) {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
+// ===== ФУНКЦИИ УПРАВЛЕНИЯ БАЗОВЫМИ ПРОМТАМИ =====
+
+// Базовые промты
+const basePrompts = {
+    default: "Вы виртуальный помощник на концерте Main Strings Orchestra. Отвечайте кратко и по делу, помогайте зрителям наслаждаться музыкой.",
+    creative: "Вы творческий ассистент на концерте Main Strings Orchestra. Отвечайте креативно и вдохновляюще, помогайте зрителям погрузиться в атмосферу музыки.",
+    technical: "Вы технический помощник на концерте Main Strings Orchestra. Отвечайте точно и информативно, помогайте зрителям понять музыкальные детали.",
+    emotional: "Вы эмоциональный проводник на концерте Main Strings Orchestra. Отвечайте с чувством и эмпатией, помогайте зрителям переживать эмоции музыки.",
+    minimal: "Вы минималистичный помощник на концерте Main Strings Orchestra. Отвечайте максимально кратко и по существу."
+};
+
+// Инициализация промтов при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const promptSelect = document.getElementById('base-prompt');
+    const customPromptGroup = document.getElementById('custom-prompt-group');
+    const promptText = document.getElementById('prompt-text');
+    
+    if (promptSelect && customPromptGroup && promptText) {
+        // Обновляем предварительный просмотр при изменении выбора
+        promptSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            
+            if (selectedValue === 'custom') {
+                customPromptGroup.style.display = 'block';
+                promptText.textContent = 'Введите ваш пользовательский промт...';
+            } else {
+                customPromptGroup.style.display = 'none';
+                promptText.textContent = basePrompts[selectedValue] || basePrompts.default;
+            }
+        });
+        
+        // Обновляем предварительный просмотр при вводе пользовательского промта
+        const customPromptText = document.getElementById('custom-prompt-text');
+        if (customPromptText) {
+            customPromptText.addEventListener('input', function() {
+                if (promptSelect.value === 'custom') {
+                    promptText.textContent = this.value || 'Введите ваш пользовательский промт...';
+                }
+            });
+        }
+    }
+});
+
+async function updateBasePrompt() {
+    const promptSelect = document.getElementById('base-prompt');
+    const customPromptText = document.getElementById('custom-prompt-text');
+    
+    if (!promptSelect) {
+        showNotification('Ошибка: элемент выбора промта не найден', 'error');
+        return;
+    }
+    
+    const selectedType = promptSelect.value;
+    let promptContent;
+    
+    if (selectedType === 'custom') {
+        if (!customPromptText || !customPromptText.value.trim()) {
+            showNotification('Пожалуйста, введите пользовательский промт', 'warning');
+            return;
+        }
+        promptContent = customPromptText.value.trim();
+    } else {
+        promptContent = basePrompts[selectedType] || basePrompts.default;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/update-base-prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt_type: selectedType,
+                prompt_content: promptContent
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`Базовый промт "${selectedType}" успешно обновлен!`, 'success');
+        } else {
+            showNotification(data.message || 'Ошибка обновления промта', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка обновления базового промта:', error);
+        showNotification('Ошибка обновления промта', 'error');
+    }
+}
+
 // ===== ФУНКЦИИ УПРАВЛЕНИЯ КОНЦЕРТОМ =====
 
 async function sendTrackMessage() {
-    const movieTitle = document.getElementById('movie-title').value.trim();
-    const movieDescription = document.getElementById('movie-description').value.trim();
-    const movieActors = document.getElementById('movie-actors').value.trim();
+    console.log('sendTrackMessage вызвана');
+    
+    const movieTitle = document.getElementById('movie-title');
+    const movieDescription = document.getElementById('movie-description');
+    const movieActors = document.getElementById('movie-actors');
+    
+    console.log('Элементы найдены:', {
+        title: movieTitle,
+        description: movieDescription,
+        actors: movieActors
+    });
     
     if (!movieTitle || !movieDescription || !movieActors) {
+        console.error('Не все элементы найдены');
+        showNotification('Ошибка: не все поля найдены', 'error');
+        return;
+    }
+    
+    const titleValue = movieTitle.value.trim();
+    const descriptionValue = movieDescription.value.trim();
+    const actorsValue = movieActors.value.trim();
+    
+    console.log('Значения полей:', {
+        title: titleValue,
+        description: descriptionValue,
+        actors: actorsValue
+    });
+    
+    if (!titleValue || !descriptionValue || !actorsValue) {
         showNotification('Пожалуйста, заполните все поля', 'warning');
         return;
     }
     
-    const message = `📽️ **${movieTitle}**
+    const message = `📽️ **${titleValue}**
 
-${movieDescription}
+${descriptionValue}
 
-**Актёры/персонажи:** ${movieActors}
+**Актёры/персонажи:** ${actorsValue}
 
 ---
 
@@ -404,9 +518,9 @@ ${movieDescription}
         if (data.success) {
             showNotification('Сообщение перед треком отправлено!', 'success');
             // Очищаем поля
-            document.getElementById('movie-title').value = '';
-            document.getElementById('movie-description').value = '';
-            document.getElementById('movie-actors').value = '';
+            movieTitle.value = '';
+            movieDescription.value = '';
+            movieActors.value = '';
         } else {
             showNotification(data.message || 'Ошибка отправки сообщения', 'error');
         }
@@ -499,6 +613,7 @@ window.resetStats = resetStats;
 window.exportData = exportData;
 window.generateImageFromMix = generateImageFromMix;
 window.downloadGeneratedImage = downloadGeneratedImage;
+window.updateBasePrompt = updateBasePrompt;
 window.sendTrackMessage = sendTrackMessage;
 window.sendAudienceResponse = sendAudienceResponse;
 window.sendConcertEnd = sendConcertEnd;

@@ -605,17 +605,62 @@ body {
     min-height: 80px;
 }
 
-/* Адаптивность для концертных элементов */
+/* Стили для выбора базового промта */
+.prompt-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.prompt-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.prompt-select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+.prompt-preview {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prompt-preview h4 {
+    color: #fff;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.prompt-text {
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.5;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 3px solid #4CAF50;
+}
+
+/* Адаптивность для промтов */
 @media (max-width: 768px) {
-    .concert-controls {
-        gap: 20px;
+    .prompt-selector {
+        gap: 12px;
     }
     
-    .concert-section {
-        padding: 15px;
-    }
-    
-    .concert-section h3 {
-        font-size: 16px;
+    .prompt-preview {
+        padding: 12px;
     }
 }

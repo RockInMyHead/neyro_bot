@@ -34,7 +34,38 @@
                 <button class="btn btn-secondary" onclick="generateMixedText()">🎭 Сгенерировать сейчас</button>
             </div>
 
-            <!-- Генерация изображений из микса -->
+            <!-- Выбор базового промта -->
+            <div class="card">
+                <h2>🤖 Базовый промт</h2>
+                <div class="prompt-selector">
+                    <div class="form-group">
+                        <label for="base-prompt">Выберите базовый промт:</label>
+                        <select id="base-prompt" class="prompt-select">
+                            <option value="default">По умолчанию (концерт)</option>
+                            <option value="creative">Творческий</option>
+                            <option value="technical">Технический</option>
+                            <option value="emotional">Эмоциональный</option>
+                            <option value="minimal">Минималистичный</option>
+                            <option value="custom">Пользовательский</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="custom-prompt-group" style="display: none;">
+                        <label for="custom-prompt-text">Пользовательский промт:</label>
+                        <textarea id="custom-prompt-text" placeholder="Введите ваш промт..."></textarea>
+                    </div>
+                    
+                    <div class="prompt-preview" id="prompt-preview">
+                        <h4>Предварительный просмотр:</h4>
+                        <div class="prompt-text" id="prompt-text">
+                            Вы виртуальный помощник на концерте Main Strings Orchestra. Отвечайте кратко и по делу, помогайте зрителям наслаждаться музыкой.
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="updateBasePrompt()">🔄 Обновить промт</button>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>🎨 Генерация изображения из микса</h2>
                 <div class="image-generator-container">

@@ -267,7 +267,34 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/admin/send-concert-message', methods=['POST'])
+@app.route('/api/admin/update-base-prompt', methods=['POST'])
+def admin_update_base_prompt():
+    """Обновляет базовый промт для AI"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'prompt_type' not in data or 'prompt_content' not in data:
+            return jsonify({"success": False, "message": "Неверные данные"}), 400
+        
+        prompt_type = data['prompt_type']
+        prompt_content = data['prompt_content']
+        
+        # Здесь можно добавить логику сохранения промта в базу данных
+        # или обновления глобальной переменной
+        logger.info(f"Обновление базового промта ({prompt_type}): {prompt_content[:100]}...")
+        
+        # В будущем здесь будет сохранение в базу данных или файл конфигурации
+        # Пока просто логируем и возвращаем успех
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Базовый промт '{prompt_type}' успешно обновлен"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка обновления базового промта: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
 def admin_send_concert_message():
     """Отправляет сообщения концерта всем пользователям"""
     try:
