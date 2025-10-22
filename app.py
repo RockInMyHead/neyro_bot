@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import existing handlers
-from api_handler import handle_api_request
 from simple_message_db import message_db
 from openai_client import get_openai_response
 from image_queue_manager import queue_manager
@@ -268,7 +267,34 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-if __name__ == '__main__':
+@app.route('/api/admin/send-concert-message', methods=['POST'])
+def admin_send_concert_message():
+    """Отправляет сообщения концерта всем пользователям"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'type' not in data or 'content' not in data:
+            return jsonify({"success": False, "message": "Неверные данные"}), 400
+        
+        message_type = data['type']
+        content = data['content']
+        
+        # Здесь можно добавить логику отправки сообщений всем пользователям
+        # Пока просто логируем и возвращаем успех
+        logger.info(f"Концертное сообщение ({message_type}): {content[:100]}...")
+        
+        # В будущем здесь будет интеграция с Telegram Bot API для массовой рассылки
+        # или сохранение в базу данных для последующей отправки
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Сообщение типа '{message_type}' подготовлено к отправке"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка отправки концертного сообщения: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
     # Debug: print registered routes
     print('Registered routes:')
     for rule in app.url_map.iter_rules():

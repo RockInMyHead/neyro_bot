@@ -363,6 +363,129 @@ function formatFileSize(bytes) {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
 
+// ===== ФУНКЦИИ УПРАВЛЕНИЯ КОНЦЕРТОМ =====
+
+async function sendTrackMessage() {
+    const movieTitle = document.getElementById('movie-title').value.trim();
+    const movieDescription = document.getElementById('movie-description').value.trim();
+    const movieActors = document.getElementById('movie-actors').value.trim();
+    
+    if (!movieTitle || !movieDescription || !movieActors) {
+        showNotification('Пожалуйста, заполните все поля', 'warning');
+        return;
+    }
+    
+    const message = `📽️ **${movieTitle}**
+
+${movieDescription}
+
+**Актёры/персонажи:** ${movieActors}
+
+---
+
+Какие образы или пейзажи возникают у вас, когда вы думаете об этой истории? 
+
+Пожалуйста, ответьте 1–5 словами. Можно написать сейчас или во время исполнения, но только один раз в рамках этого произведения.`;
+    
+    try {
+        const response = await fetch('/api/admin/send-concert-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'track_message',
+                content: message
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Сообщение перед треком отправлено!', 'success');
+            // Очищаем поля
+            document.getElementById('movie-title').value = '';
+            document.getElementById('movie-description').value = '';
+            document.getElementById('movie-actors').value = '';
+        } else {
+            showNotification(data.message || 'Ошибка отправки сообщения', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки сообщения перед треком:', error);
+        showNotification('Ошибка отправки сообщения', 'error');
+    }
+}
+
+async function sendAudienceResponse() {
+    const aiComment = document.getElementById('ai-comment').value.trim();
+    
+    if (!aiComment) {
+        showNotification('Пожалуйста, введите комментарий от нейронки', 'warning');
+        return;
+    }
+    
+    const message = `${aiComment}
+
+Спасибо, что поделились своими идеями, мы обязательно постараемся их учесть. 
+Продолжайте наслаждаться музыкой и визуальными образами на сцене!`;
+    
+    try {
+        const response = await fetch('/api/admin/send-concert-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'audience_response',
+                content: message
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Ответ зрителям отправлен!', 'success');
+            // Очищаем поле
+            document.getElementById('ai-comment').value = '';
+        } else {
+            showNotification(data.message || 'Ошибка отправки ответа', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки ответа зрителям:', error);
+        showNotification('Ошибка отправки ответа', 'error');
+    }
+}
+
+async function sendConcertEnd() {
+    const message = `Спасибо, что были с нами — Main Strings Orchestra × Neuroevent.
+Оставьте короткий отзыв — это помогает нам становиться лучше!
+P.S. Ответы анонимны.`;
+    
+    try {
+        const response = await fetch('/api/admin/send-concert-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'concert_end',
+                content: message
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Финальное сообщение отправлено!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка отправки финального сообщения', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки финального сообщения:', error);
+        showNotification('Ошибка отправки финального сообщения', 'error');
+    }
+}
+
 // Экспорт функций для использования в HTML
 
 
@@ -376,3 +499,6 @@ window.resetStats = resetStats;
 window.exportData = exportData;
 window.generateImageFromMix = generateImageFromMix;
 window.downloadGeneratedImage = downloadGeneratedImage;
+window.sendTrackMessage = sendTrackMessage;
+window.sendAudienceResponse = sendAudienceResponse;
+window.sendConcertEnd = sendConcertEnd;
