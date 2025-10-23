@@ -1083,7 +1083,8 @@ async function sendTrackMessage() {
         return;
     }
     
-    const message = `📽️ **${titleValue}**
+    // Формируем полное сообщение для отправки пользователям
+    const fullMessage = `📽️ **${titleValue}**
 
 ${descriptionValue}
 
@@ -1092,6 +1093,9 @@ ${descriptionValue}
 ---
 
 Какие образы или пейзажи возникают у вас, когда вы думаете об этой истории?`;
+    
+    // Для отправки используем полное сообщение
+    const message = fullMessage;
     
     try {
         console.log('Отправляем запрос на /api/admin/send-concert-message с данными:', {
@@ -2604,3 +2608,136 @@ async function logoutAdmin() {
 
 // Экспорт функции выхода
 window.logoutAdmin = logoutAdmin;
+
+// ===== ФУНКЦИИ ГЕНЕРАЦИИ ИЗОБРАЖЕНИЙ =====
+
+// Загрузка базового промта при инициализации
+async function loadBasePrompt() {
+    try {
+        const response = await fetch('/api/admin/get-base-prompt');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('current-base-prompt').textContent = data.prompt;
+        } else {
+            document.getElementById('current-base-prompt').textContent = 'Ошибка загрузки базового промта';
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки базового промта:', error);
+        document.getElementById('current-base-prompt').textContent = 'Ошибка загрузки базового промта';
+    }
+}
+
+// Предварительный просмотр полного промта
+function previewFullPrompt() {
+    const customPrompt = document.getElementById('custom-prompt').value.trim();
+    const basePrompt = document.getElementById('current-base-prompt').textContent;
+    
+    if (!customPrompt) {
+        document.getElementById('full-prompt-preview').textContent = 'Введите ваш промт для предварительного просмотра...';
+        return;
+    }
+    
+    const fullPrompt = `Создай художественное изображение: ${customPrompt} ${basePrompt}`;
+    document.getElementById('full-prompt-preview').textContent = fullPrompt;
+}
+
+// Генерация изображения
+async function generateCustomImage() {
+    const customPrompt = document.getElementById('custom-prompt').value.trim();
+    
+    if (!customPrompt) {
+        showNotification('Пожалуйста, введите промт для генерации изображения', 'warning');
+        return;
+    }
+    
+    // Показываем статус загрузки
+    const statusDiv = document.getElementById('image-generation-status');
+    const generateBtn = document.getElementById('generate-image-btn');
+    const previewBtn = document.getElementById('preview-btn');
+    
+    statusDiv.style.display = 'flex';
+    generateBtn.disabled = true;
+    previewBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/admin/generate-custom-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                custom_prompt: customPrompt
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Показываем сгенерированное изображение
+            const imageContainer = document.getElementById('generated-image-container');
+            const imageElement = document.getElementById('generated-image');
+            
+            imageElement.src = data.image_url;
+            imageElement.alt = 'Сгенерированное изображение';
+            imageContainer.style.display = 'block';
+            
+            // Сохраняем URL для скачивания
+            imageElement.dataset.downloadUrl = data.image_url;
+            
+            showNotification('Изображение успешно сгенерировано!', 'success');
+        } else {
+            showNotification(data.message || 'Ошибка генерации изображения', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации изображения:', error);
+        showNotification('Ошибка генерации изображения', 'error');
+    } finally {
+        // Скрываем статус загрузки
+        statusDiv.style.display = 'none';
+        generateBtn.disabled = false;
+        previewBtn.disabled = false;
+    }
+}
+
+// Скачивание сгенерированного изображения
+function downloadGeneratedImage() {
+    const imageElement = document.getElementById('generated-image');
+    const downloadUrl = imageElement.dataset.downloadUrl;
+    
+    if (!downloadUrl) {
+        showNotification('Нет изображения для скачивания', 'error');
+        return;
+    }
+    
+    // Создаем временную ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `generated_image_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('Изображение скачивается...', 'success');
+}
+
+// Обновляем функцию инициализации для загрузки базового промта
+const originalLoadInitialData = loadInitialData;
+loadInitialData = async function() {
+    await originalLoadInitialData();
+    await loadBasePrompt();
+};
+
+// Добавляем обработчик для предварительного просмотра при вводе
+document.addEventListener('DOMContentLoaded', function() {
+    const customPromptTextarea = document.getElementById('custom-prompt');
+    if (customPromptTextarea) {
+        customPromptTextarea.addEventListener('input', previewFullPrompt);
+    }
+});
+
+// Экспортируем новые функции
+window.loadBasePrompt = loadBasePrompt;
+window.previewFullPrompt = previewFullPrompt;
+window.generateCustomImage = generateCustomImage;
+window.downloadGeneratedImage = downloadGeneratedImage;

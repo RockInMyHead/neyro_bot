@@ -1368,3 +1368,97 @@ if __name__ == '__main__':
     
     port = int(os.getenv('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+# ===== API ENDPOINTS ДЛЯ ГЕНЕРАЦИИ ИЗОБРАЖЕНИЙ =====
+
+@app.route('/api/admin/get-base-prompt', methods=['GET'])
+@require_admin_auth
+def get_base_prompt():
+    """Получает текущий базовый промт"""
+    try:
+        from prompt_manager import get_current_base_prompt
+        current_prompt = get_current_base_prompt()
+        
+        return jsonify({
+            "success": True,
+            "prompt": current_prompt
+        })
+    except Exception as e:
+        logger.error(f"Ошибка получения базового промта: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/admin/generate-custom-image', methods=['POST'])
+@require_admin_auth
+def generate_custom_image():
+    """Генерирует изображение на основе пользовательского промта и базового промта"""
+    try:
+        data = request.get_json()
+        custom_prompt = data.get('custom_prompt', '').strip()
+        
+        if not custom_prompt:
+            return jsonify({"success": False, "message": "Промт не предоставлен"}), 400
+        
+        # Получаем базовый промт
+        from prompt_manager import get_current_base_prompt
+        base_prompt = get_current_base_prompt()
+        
+        # Объединяем промты
+        full_prompt = f"Создай художественное изображение: {custom_prompt} {base_prompt}"
+        
+        logger.info(f"Генерация изображения с промтом: {full_prompt[:100]}...")
+        
+        # Генерируем изображение через Gemini API
+        from gemini_client import generate_image_with_retry
+        
+        # Создаем event loop для async функции
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            image_b64 = loop.run_until_complete(generate_image_with_retry(full_prompt))
+        finally:
+            loop.close()
+        
+        # Сохраняем изображение
+        import base64
+        import uuid
+        import time
+        from PIL import Image
+        from io import BytesIO
+        
+        # Декодируем base64
+        image_data = base64.b64decode(image_b64)
+        
+        # Создаем имя файла
+        timestamp = int(time.time())
+        filename = f"custom_image_{timestamp}_{uuid.uuid4().hex[:8]}.png"
+        filepath = os.path.join(GENERATED_IMAGES_FOLDER, filename)
+        
+        # Обрабатываем и сохраняем изображение
+        with Image.open(BytesIO(image_data)) as img:
+            # Изменяем размер на 1920x1280 если нужно
+            if img.size != (1920, 1280):
+                img = img.resize((1920, 1280), Image.Resampling.LANCZOS)
+            
+            # Сохраняем изображение
+            img.save(filepath, 'PNG', quality=95)
+        
+        # Создаем URL для доступа к изображению
+        image_url = f"/generated_images/{filename}"
+        
+        logger.info(f"✅ Изображение сохранено: {filename}")
+        
+        return jsonify({
+            "success": True,
+            "image_url": image_url,
+            "filename": filename,
+            "message": "Изображение успешно сгенерировано"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка генерации изображения: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000, debug=True)

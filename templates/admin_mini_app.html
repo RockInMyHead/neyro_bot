@@ -179,6 +179,56 @@ P.S. Ответы анонимны.</textarea>
             </div>
 
             <div class="card">
+                <h2>🎨 Генерация изображений</h2>
+                <div class="image-generation-section">
+                    <div class="content-item">
+                        <label for="custom-prompt">Ваш промт для изображения:</label>
+                        <textarea 
+                            id="custom-prompt" 
+                            placeholder="Опишите, какое изображение вы хотите сгенерировать..."
+                            rows="3"
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; resize: vertical;"
+                        ></textarea>
+                    </div>
+                    <div class="content-item">
+                        <label>Базовый промт:</label>
+                        <div id="current-base-prompt" style="padding: 10px; background: #f5f5f5; border-radius: 5px; font-style: italic; color: #666;">
+                            Загрузка базового промта...
+                        </div>
+                    </div>
+                    <div class="content-item">
+                        <label>Предварительный просмотр полного промта:</label>
+                        <div id="full-prompt-preview" style="padding: 10px; background: #e8f4fd; border-radius: 5px; font-family: monospace; font-size: 14px; max-height: 150px; overflow-y: auto;">
+                            Введите ваш промт для предварительного просмотра...
+                        </div>
+                    </div>
+                    <div class="control-buttons" style="margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="generateCustomImage()" id="generate-image-btn">
+                            🎨 Сгенерировать изображение
+                        </button>
+                        <button class="btn btn-secondary" onclick="previewFullPrompt()" id="preview-btn">
+                            👁️ Предварительный просмотр
+                        </button>
+                    </div>
+                    <div id="image-generation-status" style="margin-top: 15px; display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>Генерация изображения...</span>
+                    </div>
+                    <div id="generated-image-container" style="margin-top: 15px; display: none;">
+                        <h4>Сгенерированное изображение:</h4>
+                        <div style="text-align: center;">
+                            <img id="generated-image" style="max-width: 100%; max-height: 400px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        </div>
+                        <div style="margin-top: 10px; text-align: center;">
+                            <button class="btn btn-success" onclick="downloadGeneratedImage()" id="download-btn">
+                                💾 Скачать изображение
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
                 <h2>⚙️ Управление</h2>
                 <div class="control-buttons">
                     <button class="btn btn-danger" onclick="resetStats()">🔄 Сбросить статистику</button>
