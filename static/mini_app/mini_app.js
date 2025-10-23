@@ -336,6 +336,9 @@ async function sendChatMessage() {
     addMessageToChat(message, true);
     chatInput.value = '';
     
+    // Устанавливаем флаг ожидания сообщения от администратора
+    isWaitingForAdminMessage = true;
+    
     // Показываем индикатор печати
     showTypingIndicator();
     
@@ -369,8 +372,10 @@ function removeTypingIndicator() {
         typingIndicator.remove();
     }
     
-    // Включаем блок ввода после удаления индикатора печати
-    enableChatInput();
+    // Включаем блок ввода только если не ждем сообщение от администратора
+    if (!isWaitingForAdminMessage) {
+        enableChatInput();
+    }
 }
 
 // Отправка сообщения боту через OpenAI API
@@ -526,6 +531,7 @@ function handleChatKeyPress(event) {
 // Переменные для отслеживания сообщений
 let lastMessageTimestamp = 0;
 let isInitialized = false;
+let isWaitingForAdminMessage = false; // Флаг ожидания сообщения от администратора
 
 // Функция для получения последнего сообщения от админа
 async function getLatestMessage() {
@@ -546,6 +552,9 @@ async function getLatestMessage() {
             if (data.timestamp > lastMessageTimestamp) {
                 // Добавляем сообщение в чат
                 addMessageToChat(data.message, false);
+                
+                // Сбрасываем флаг ожидания сообщения от администратора
+                isWaitingForAdminMessage = false;
                 
                 // Активируем блок ввода после получения сообщения от админа
                 enableChatInput();
