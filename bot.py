@@ -30,7 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "🚀",  # Эмодзи ракеты как минимальный текст
+        "Добро пожаловать! Выберите действие:",
         reply_markup=reply_markup
     )
 
@@ -49,7 +49,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 /questions - Показать статус вопросов
 /reset_questions - Сбросить счетчик вопросов
 
-🚀 Mini App включает:
+📱 Mini App включает:
 • Интерактивную статистику
 • Настройки уведомлений
 • Быстрые действия
@@ -74,7 +74,7 @@ async def app_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     reply_markup = InlineKeyboardMarkup([[mini_app_button]])
     
     await update.message.reply_text(
-        "🚀",  # Эмодзи ракеты как минимальный текст
+        "Откройте Mini App:",
         reply_markup=reply_markup
     )
 
@@ -114,7 +114,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 • Команды управления
 • Логирование действий
 
-🚀 Mini App функции:
+📱 Mini App функции:
 • Интерактивная статистика
 • Настройки уведомлений
 • Быстрые действия

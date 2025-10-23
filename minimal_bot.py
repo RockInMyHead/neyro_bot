@@ -36,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "🚀",  # Эмодзи ракеты как минимальный текст
+        "Добро пожаловать! Выберите действие:",
         reply_markup=reply_markup
     )
 
@@ -50,7 +50,7 @@ async def app_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     reply_markup = InlineKeyboardMarkup([[mini_app_button]])
     
     await update.message.reply_text(
-        "🚀",  # Эмодзи ракеты как минимальный текст
+        "Добро пожаловать! Выберите действие:",
         reply_markup=reply_markup
     )
 
@@ -67,7 +67,7 @@ async def show_mini_app_button(update: Update, context: ContextTypes.DEFAULT_TYP
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "🚀",  # Эмодзи ракеты как минимальный текст
+        "Добро пожаловать! Выберите действие:",
         reply_markup=reply_markup
     )
 
