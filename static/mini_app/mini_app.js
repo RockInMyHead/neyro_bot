@@ -228,6 +228,112 @@ document.addEventListener('DOMContentLoaded', function() {
 // Чат функциональность
 let chatHistory = [];
 
+// Функции для сохранения и загрузки чата
+function saveChatToStorage() {
+    try {
+        const chatData = {
+            history: chatHistory,
+            timestamp: Date.now(),
+            user_id: getUserId()
+        };
+        localStorage.setItem('neuroevent_chat', JSON.stringify(chatData));
+        console.log('💾 Чат сохранен в localStorage:', chatHistory.length, 'сообщений');
+    } catch (error) {
+        console.error('Ошибка сохранения чата:', error);
+    }
+}
+
+function loadChatFromStorage() {
+    try {
+        const savedData = localStorage.getItem('neuroevent_chat');
+        if (savedData) {
+            const chatData = JSON.parse(savedData);
+            const currentUserId = getUserId();
+            
+            // Проверяем, что чат принадлежит текущему пользователю
+            if (chatData.user_id === currentUserId) {
+                chatHistory = chatData.history || [];
+                console.log('📂 Чат загружен из localStorage:', chatHistory.length, 'сообщений');
+                return true;
+            } else {
+                console.log('🔄 Чат принадлежит другому пользователю, очищаем');
+                localStorage.removeItem('neuroevent_chat');
+                chatHistory = [];
+                return false;
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки чата:', error);
+        chatHistory = [];
+    }
+    return false;
+}
+
+function getUserId() {
+    // Получаем ID пользователя из Telegram WebApp или используем fallback
+    const user = tg.initDataUnsafe?.user;
+    return user?.id || 'anonymous';
+}
+
+// Восстановление чата из истории
+function restoreChatFromHistory() {
+    const chatMessages = document.getElementById('chat-messages');
+    if (!chatMessages) return;
+    
+    // Очищаем текущие сообщения (кроме первого приветственного)
+    const existingMessages = chatMessages.querySelectorAll('.message');
+    for (let i = 1; i < existingMessages.length; i++) {
+        existingMessages[i].remove();
+    }
+    
+    // Восстанавливаем сообщения из истории
+    chatHistory.forEach(chatItem => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${chatItem.isUser ? 'user-message' : 'bot-message'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">${markdownToHtml(chatItem.message)}</div>
+            <div class="message-time">${chatItem.timestamp}</div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+    });
+    
+    // Прокручиваем к последнему сообщению
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    console.log('🔄 Чат восстановлен из истории:', chatHistory.length, 'сообщений');
+}
+
+// Очистка истории чата
+function clearChatHistory() {
+    const confirmed = confirm('Вы уверены, что хотите очистить историю чата?\n\nЭто действие нельзя отменить.');
+    
+    if (confirmed) {
+        // Очищаем историю
+        chatHistory = [];
+        
+        // Очищаем localStorage
+        localStorage.removeItem('neuroevent_chat');
+        
+        // Очищаем DOM (кроме первого приветственного сообщения)
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            const existingMessages = chatMessages.querySelectorAll('.message');
+            for (let i = 1; i < existingMessages.length; i++) {
+                existingMessages[i].remove();
+            }
+        }
+        
+        console.log('🗑️ История чата очищена');
+        
+        // Показываем уведомление пользователю
+        if (tg.showAlert) {
+            tg.showAlert('История чата очищена');
+        }
+    }
+}
+
 // Включение блока ввода сообщений
 function enableChatInput() {
     const chatInput = document.getElementById('chat-input');
@@ -313,6 +419,9 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     if (chatHistory.length > 50) {
         chatHistory = chatHistory.slice(-50);
     }
+    
+    // Сохраняем чат в localStorage
+    saveChatToStorage();
     
     // Если это сообщение от бота (не от пользователя), включаем блок ввода
     if (!isUser) {
@@ -582,12 +691,19 @@ function initChat() {
     if (chatInput) {
         chatInput.addEventListener('keypress', handleChatKeyPress);
         
-    // Изначально отключаем блок ввода до первого ответа от бота
-    disableChatInput();
-    
-    // Запускаем проверку новых сообщений от админа
-    startMessagePolling();
-}
+        // Изначально отключаем блок ввода до первого ответа от бота
+        disableChatInput();
+        
+        // Загружаем историю чата из localStorage
+        const chatLoaded = loadChatFromStorage();
+        if (chatLoaded && chatHistory.length > 0) {
+            // Восстанавливаем чат из истории
+            restoreChatFromHistory();
+        }
+        
+        // Запускаем проверку новых сообщений от админа
+        startMessagePolling();
+    }
     
     // Первое сообщение уже есть в HTML, не добавляем дублирующее
 }
@@ -598,3 +714,4 @@ window.sendChatMessage = sendChatMessage;
 window.handleBotData = handleBotData;
 window.enableChatInput = enableChatInput;
 window.disableChatInput = disableChatInput;
+window.clearChatHistory = clearChatHistory;
