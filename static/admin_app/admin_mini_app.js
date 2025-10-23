@@ -60,8 +60,13 @@ function initializePromptQueue() {
     // Загружаем список промтов
     loadPromptList();
     
-    // Генерируем концертный контент для текущего промта
-    generateConcertContent();
+    // НЕ генерируем концертный контент, если уже выбрана новая система промтов
+    // Это предотвращает перезапись поля актеров после selectPrompt
+    if (concertPrompts.length === 0) {
+        generateConcertContent();
+    } else {
+        console.log('🎬 Пропускаем generateConcertContent - используется новая система промтов');
+    }
 }
 
 function startAutoUpdate() {
@@ -1899,6 +1904,13 @@ function selectPrompt(index) {
     
     // Обновляем поле актеров
     const actorsElement = document.getElementById('generated-movie-actors');
+    console.log('🔍 Поиск элемента актеров:', actorsElement);
+    console.log('📝 Данные промта для актеров:', {
+        hasActors: !!prompt.actors,
+        actors: prompt.actors,
+        title: prompt.title
+    });
+    
     if (actorsElement) {
         // Используем поле actors из промта, если оно есть
         if (prompt.actors) {
