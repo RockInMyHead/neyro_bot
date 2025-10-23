@@ -2192,18 +2192,32 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         const data = await response.json();
         
         if (data.success) {
-            // Ограничиваем длину описания до 300 символов для более подробного описания
             let description = data.description.trim();
-            if (description.length > 300) {
-                description = description.substring(0, 297) + '...';
+            
+            // Проверяем, не обрывается ли описание на середине предложения
+            if (description.length > 250) {
+                // Ищем последнюю точку, восклицательный или вопросительный знак
+                const lastSentenceEnd = Math.max(
+                    description.lastIndexOf('.'),
+                    description.lastIndexOf('!'),
+                    description.lastIndexOf('?')
+                );
+                
+                if (lastSentenceEnd > 100) {
+                    // Обрезаем по последнему завершенному предложению
+                    description = description.substring(0, lastSentenceEnd + 1);
+                } else {
+                    // Если нет завершенных предложений, обрезаем аккуратно
+                    description = description.substring(0, 247) + '...';
+                }
             }
             
             descriptionElement.textContent = description;
             descriptionElement.style.color = '#333';
-            console.log('✅ Описание фильма сгенерировано (обрезано до 300 символов):', description);
+            console.log('✅ Описание фильма сгенерировано:', description);
         } else {
             console.error('Ошибка генерации описания:', data.message);
-            // Fallback тоже обрезаем до 300 символов
+            // Fallback - используем технический промпт как есть
             let fallbackDescription = technicalPrompt.trim();
             if (fallbackDescription.length > 300) {
                 fallbackDescription = fallbackDescription.substring(0, 297) + '...';
@@ -2213,7 +2227,7 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         }
     } catch (error) {
         console.error('Ошибка генерации описания фильма:', error);
-        // Fallback тоже обрезаем до 300 символов
+        // Fallback - используем технический промпт как есть
         let fallbackDescription = technicalPrompt.trim();
         if (fallbackDescription.length > 300) {
             fallbackDescription = fallbackDescription.substring(0, 297) + '...';
