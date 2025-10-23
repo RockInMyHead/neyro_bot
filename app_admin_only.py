@@ -401,17 +401,18 @@ def smart_batches_stats():
 def smart_batches_list():
     """Получает список всех батчей"""
     try:
+        # get_all_batches_info() возвращает список словарей
         batches = smart_batch_manager.get_all_batches_info()
         batches_data = []
         for batch in batches:
             batches_data.append({
-                'batch_id': batch.batch_id,
-                'status': batch.status.value,
-                'message_count': batch.message_count,
-                'created_at': batch.created_at,
-                'completed_at': batch.completed_at,
-                'mixed_text': batch.mixed_text,
-                'image_path': batch.image_path
+                'batch_id': batch.get('id', ''),
+                'status': batch.get('status', 'unknown'),
+                'message_count': batch.get('message_count', 0),
+                'created_at': batch.get('created_at', 0),
+                'completed_at': batch.get('completed_at'),
+                'mixed_text': batch.get('mixed_text'),
+                'image_path': batch.get('image_path')
             })
         return jsonify({
             'success': True,
@@ -482,7 +483,8 @@ def smart_batches_current_mixed_text():
     """Получает миксированный текст последнего обработанного батча"""
     try:
         # Получаем последний обработанный батч
-        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.status == 'completed']
+        # get_all_batches_info() возвращает список словарей
+        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.get('status') == 'completed']
         
         if not completed_batches:
             return jsonify({
@@ -495,9 +497,9 @@ def smart_batches_current_mixed_text():
         
         return jsonify({
             'success': True,
-            'mixed_text': latest_batch.mixed_text or 'Текст не сгенерирован',
-            'batch_id': latest_batch.batch_id,
-            'completed_at': latest_batch.completed_at
+            'mixed_text': latest_batch.get('mixed_text') or 'Текст не сгенерирован',
+            'batch_id': latest_batch.get('id', ''),
+            'completed_at': latest_batch.get('completed_at')
         })
         
     except Exception as e:
@@ -512,21 +514,23 @@ def smart_batches_images():
     """Получить список сгенерированных изображений"""
     try:
         # Получаем все завершенные батчи с изображениями
-        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.status == 'completed']
+        # get_all_batches_info() возвращает список словарей, а не объектов
+        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.get('status') == 'completed']
         images_data = []
         
         for batch in completed_batches:
-            if batch.image_path and os.path.exists(batch.image_path):
-                filename = os.path.basename(batch.image_path)
+            image_path = batch.get('image_path')
+            if image_path and os.path.exists(image_path):
+                filename = os.path.basename(image_path)
                 image_url = f"/generated_images/{filename}"
                 images_data.append({
-                    'batch_id': batch.batch_id,
-                    'mixed_text': batch.mixed_text or 'Текст не сгенерирован',
+                    'batch_id': batch.get('id', ''),
+                    'mixed_text': batch.get('mixed_text') or 'Текст не сгенерирован',
                     'image_url': image_url,
-                    'image_path': batch.image_path,
-                    'completed_at': batch.completed_at * 1000 if batch.completed_at else 0,
-                    'processing_time': (batch.completed_at - batch.created_at) if batch.completed_at and batch.created_at else 0,
-                    'message_count': batch.message_count
+                    'image_path': image_path,
+                    'completed_at': batch.get('completed_at', 0) * 1000 if batch.get('completed_at') else 0,
+                    'processing_time': batch.get('processing_time', 0),
+                    'message_count': batch.get('message_count', 0)
                 })
         
         # Сортируем по времени завершения (новые сначала)
