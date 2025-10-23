@@ -129,6 +129,7 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0; /* allow inner scroll areas to work */
+    height: 100vh; /* Занимаем весь экран */
 }
 
 /* Ensure chat card stretches to fill remaining height */
@@ -137,8 +138,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 5vh); /* Максимальная высота экрана с отступами 2.5% сверху и снизу */
-    max-height: calc(100vh - 5vh); /* Ограничиваем максимальную высоту */
+    height: 100vh; /* Занимаем весь экран */
+    max-height: 100vh; /* Ограничиваем максимальную высоту */
 }
 
 /* Header */
@@ -258,9 +259,9 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 5vh); /* Максимальная высота экрана с отступами 2.5% сверху и снизу */
-    max-height: calc(100vh - 5vh); /* Ограничиваем максимальную высоту */
-    border-radius: var(--radius-lg);
+    height: 100vh; /* Занимаем весь экран */
+    max-height: 100vh; /* Ограничиваем максимальную высоту */
+    border-radius: 0; /* Убираем скругления для полноэкранного режима */
     overflow: hidden;
     background: rgba(10, 10, 10, 0.5);
     position: relative; /* Для кнопки прокрутки */
@@ -603,13 +604,13 @@ body {
     .chat-container {
         flex: 1;
         min-height: 0;
-        height: calc(100vh - 5vh); /* Максимальная высота для мобильных с отступами 2.5% */
-        max-height: calc(100vh - 5vh);
+        height: 100vh; /* Занимаем весь экран на мобильных */
+        max-height: 100vh;
     }
     
     .chat-card {
-        height: calc(100vh - 5vh); /* Максимальная высота для мобильных с отступами 2.5% */
-        max-height: calc(100vh - 5vh);
+        height: 100vh; /* Занимаем весь экран на мобильных */
+        max-height: 100vh;
     }
     
     .message-bubble {
@@ -623,13 +624,13 @@ body {
     }
     
     .chat-container {
-        height: calc(100vh - 5vh); /* Максимальная высота для маленьких экранов с отступами 2.5% */
-        max-height: calc(100vh - 5vh);
+        height: 100vh; /* Занимаем весь экран на маленьких экранах */
+        max-height: 100vh;
     }
     
     .chat-card {
-        height: calc(100vh - 5vh); /* Максимальная высота для маленьких экранов с отступами 2.5% */
-        max-height: calc(100vh - 5vh);
+        height: 100vh; /* Занимаем весь экран на маленьких экранах */
+        max-height: 100vh;
     }
     
     .logo {
@@ -663,14 +664,14 @@ body {
 /* Исправление для мобильных устройств с клавиатурой */
 @media (max-height: 500px) {
     .chat-container {
-        height: 300px !important;
-        max-height: 300px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         min-height: 200px !important;
     }
     
     .chat-card {
-        height: 300px !important;
-        max-height: 300px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         min-height: 200px !important;
     }
     
@@ -690,14 +691,14 @@ body {
 /* Дополнительные стили для очень маленьких экранов */
 @media (max-height: 400px) {
     .chat-container {
-        height: 250px !important;
-        max-height: 250px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         min-height: 150px !important;
     }
     
     .chat-card {
-        height: 250px !important;
-        max-height: 250px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         min-height: 150px !important;
     }
     
