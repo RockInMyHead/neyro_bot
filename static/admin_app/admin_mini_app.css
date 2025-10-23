@@ -1485,6 +1485,8 @@ body {
     border-radius: 12px;
     border: 1px solid #e9ecef;
     margin-top: 20px;
+    max-height: 600px;
+    overflow-y: auto;
 }
 
 .images-grid {
@@ -1492,6 +1494,25 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
     margin-top: 15px;
+}
+
+/* Скроллбар для секции изображений */
+.generated-images-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.generated-images-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.generated-images-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.generated-images-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .image-card {
@@ -1786,6 +1807,10 @@ body {
 
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
+    .generated-images-container {
+        max-height: 400px;
+    }
+    
     .images-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 10px;
