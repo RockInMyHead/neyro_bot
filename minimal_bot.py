@@ -139,8 +139,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logger.error(f"Error processing message: {e}")
         print(f"❌ Ошибка при обработке сообщения: {e}")
         # Fallback ответ в случае ошибки
-        from mock_responses import get_fallback_response
-        fallback_response = get_fallback_response(user.first_name)
+        from mock_responses import get_friendly_response
+        fallback_response = f"Привет, {user.first_name}! 👋\n\n{get_friendly_response()}"
         await update.message.reply_text(fallback_response)
 
 # Обработчик ошибок
