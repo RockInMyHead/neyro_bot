@@ -3,6 +3,9 @@
 // Инициализация Telegram Web App
 let tg = window.Telegram.WebApp;
 
+// Глобальные переменные для отслеживания сообщений
+let lastAddedMessageHash = null;
+
 // Инициализация приложения
 function initApp() {
     // Расширяем приложение на весь экран
@@ -387,14 +390,36 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     
     // Проверяем, есть ли уже такое сообщение в чате (только для бот-сообщений)
     if (!isUser) {
+        // Создаем хеш сообщения для более надежной проверки
+        const messageHash = btoa(message.trim()).substring(0, 20);
+        
+        // Проверяем, не добавляли ли мы это сообщение недавно
+        if (lastAddedMessageHash === messageHash) {
+            console.log('🔄 Сообщение уже было добавлено недавно, пропускаем дублирование');
+            console.log('🔍 Хеш сообщения:', messageHash);
+            return;
+        }
+        
+        // Проверяем существующие сообщения в DOM
         const existingMessages = chatMessages.querySelectorAll('.message.bot-message');
         for (let existingMsg of existingMessages) {
             const existingContent = existingMsg.querySelector('.message-content');
-            if (existingContent && existingContent.textContent.trim() === message.trim()) {
-                console.log('🔄 Сообщение уже существует в чате, пропускаем дублирование');
-                return;
+            if (existingContent) {
+                const existingText = existingContent.textContent.trim();
+                const newText = message.trim();
+                
+                // Проверяем совпадение по первым 50 символам для надежности
+                if (existingText.substring(0, 50) === newText.substring(0, 50)) {
+                    console.log('🔄 Сообщение уже существует в чате, пропускаем дублирование');
+                    console.log('🔍 Существующий текст:', existingText.substring(0, 30) + '...');
+                    console.log('🔍 Новый текст:', newText.substring(0, 30) + '...');
+                    return;
+                }
             }
         }
+        
+        // Сохраняем хеш последнего добавленного сообщения
+        lastAddedMessageHash = messageHash;
     }
     
     const messageDiv = document.createElement('div');
@@ -761,9 +786,17 @@ async function getLatestMessage() {
                 
                 for (let existingMsg of existingMessages) {
                     const existingContent = existingMsg.querySelector('.message-content');
-                    if (existingContent && existingContent.textContent.trim() === data.message.trim()) {
-                        messageExists = true;
-                        break;
+                    if (existingContent) {
+                        // Сравниваем исходный текст сообщения, а не HTML
+                        const existingText = existingContent.textContent.trim();
+                        const newText = data.message.trim();
+                        
+                        // Проверяем совпадение по первым 50 символам для надежности
+                        if (existingText.substring(0, 50) === newText.substring(0, 50)) {
+                            messageExists = true;
+                            console.log('🔍 Найдено дублирующееся сообщение:', existingText.substring(0, 30) + '...');
+                            break;
+                        }
                     }
                 }
                 
