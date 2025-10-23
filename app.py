@@ -720,6 +720,44 @@ def admin_clear_messages():
             "timestamp": int(time.time() * 1000)
         }), 500
 
+@app.route('/api/admin/clear-all-chats', methods=['POST'])
+def admin_clear_all_chats():
+    """Очищает всю историю чатов пользователей (сообщения, батчи, изображения)"""
+    try:
+        logger.info("Запрос на очистку всей истории чатов")
+        
+        # Очищаем все сообщения
+        message_db.clear_all_messages()
+        
+        # Очищаем все батчи
+        smart_batch_manager.clear_all_batches()
+        
+        # Очищаем все изображения (удаляем файлы)
+        import os
+        import shutil
+        if os.path.exists(GENERATED_IMAGES_FOLDER):
+            for filename in os.listdir(GENERATED_IMAGES_FOLDER):
+                file_path = os.path.join(GENERATED_IMAGES_FOLDER, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Удален файл изображения: {filename}")
+        
+        logger.info("Вся история чатов успешно очищена")
+        
+        return jsonify({
+            "success": True,
+            "message": "Вся история чатов успешно очищена",
+            "timestamp": int(time.time() * 1000)
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при очистке истории чатов: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Ошибка при очистке истории чатов: {str(e)}",
+            "timestamp": int(time.time() * 1000)
+        }), 500
+
 @app.route('/api/mini-app/latest-message', methods=['GET'])
 def get_latest_message():
     """Получает последнее сообщение для отображения в mini_app"""

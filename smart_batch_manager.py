@@ -206,6 +206,15 @@ class SmartBatchManager:
         
         return batches_info
 
+    def clear_all_batches(self) -> int:
+        """Очистить все батчи"""
+        before_count = len(self.batches)
+        self.batches = []
+        self.current_batch_index = 0
+        self.processed_message_ids.clear()
+        logger.info(f"🗑️ Очищено {before_count} батчей")
+        return before_count
+
     def clear_completed_batches(self, older_than_hours: int = 1) -> int:
         """Очистить старые завершенные батчи"""
         cutoff_time = time.time() - (older_than_hours * 3600)

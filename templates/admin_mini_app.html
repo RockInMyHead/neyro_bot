@@ -56,6 +56,7 @@
                         <button id="create-batches-btn" class="btn btn-primary" onclick="forceCreateBatches()">🔄 Создать батчи</button>
                         <button id="process-next-btn" class="btn btn-success" onclick="processNextBatch()">▶️ Обработать следующий</button>
                         <button id="clear-messages-btn" class="btn btn-warning" onclick="clearAllMessages()">🗑️ Очистить сообщения</button>
+                        <button id="clear-all-chats-btn" class="btn btn-danger" onclick="clearAllChats()">💥 Очистить всю историю чатов</button>
                     </div>
                     
                <div class="smart-batch-list-container">
@@ -190,6 +191,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=26"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=27"></script>
 </body>
 </html>

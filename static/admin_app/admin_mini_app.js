@@ -2306,6 +2306,61 @@ async function clearAllMessages() {
     }
 }
 
+// Очистка всей истории чатов пользователей
+async function clearAllChats() {
+    try {
+        // Показываем подтверждение с более серьезным предупреждением
+        const confirmed = confirm('💥 КРИТИЧЕСКОЕ ДЕЙСТВИЕ!\n\nВы уверены, что хотите очистить ВСЮ историю чатов?\n\nЭто удалит:\n• Все сообщения пользователей\n• Все батчи\n• Все сгенерированные изображения\n\nЭто действие НЕЛЬЗЯ отменить!\n\nНажмите OK для подтверждения или Отмена для отмены.');
+        
+        if (!confirmed) {
+            console.log('Очистка истории чатов отменена пользователем');
+            return;
+        }
+        
+        // Показываем индикатор загрузки
+        const clearBtn = document.getElementById('clear-all-chats-btn');
+        const originalText = clearBtn.textContent;
+        clearBtn.disabled = true;
+        clearBtn.textContent = '🔄 Очистка...';
+        
+        // Отправляем запрос на очистку всей истории
+        const response = await fetch('/api/admin/clear-all-chats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Показываем уведомление об успехе
+            alert('✅ Вся история чатов успешно очищена!\n\nУдалено:\n• Все сообщения\n• Все батчи\n• Все изображения');
+            
+            // Обновляем все данные
+            await loadSmartBatchStats();
+            await loadSmartBatchList();
+            await loadGeneratedImages();
+            await loadMessages();
+            
+            console.log('Вся история чатов успешно очищена');
+        } else {
+            // Показываем ошибку
+            alert(`❌ Ошибка очистки истории чатов: ${data.message}`);
+            console.error('Ошибка очистки истории чатов:', data.message);
+        }
+        
+    } catch (error) {
+        console.error('Ошибка при очистке истории чатов:', error);
+        alert('❌ Произошла ошибка при очистке истории чатов. Проверьте консоль для подробностей.');
+    } finally {
+        // Восстанавливаем кнопку
+        const clearBtn = document.getElementById('clear-all-chats-btn');
+        clearBtn.disabled = false;
+        clearBtn.textContent = '💥 Очистить всю историю чатов';
+    }
+}
+
 // Экспортируем новые функции
 window.loadSmartBatchStats = loadSmartBatchStats;
 window.loadSmartBatchList = loadSmartBatchList;
@@ -2317,6 +2372,7 @@ window.startSmartBatchAutoUpdate = startSmartBatchAutoUpdate;
 window.openImageModal = openImageModal;
 window.toggleStatsDropdown = toggleStatsDropdown;
 window.clearAllMessages = clearAllMessages;
+window.clearAllChats = clearAllChats;
 window.regenerateFilmDescription = regenerateFilmDescription;
 window.togglePromptEdit = togglePromptEdit;
 window.savePromptEdit = savePromptEdit;
