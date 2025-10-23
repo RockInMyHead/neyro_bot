@@ -40,6 +40,11 @@ class SmartBatch:
     completed_at: Optional[float] = None
     processing_time: Optional[float] = None
     error_message: Optional[str] = None
+    
+    @property
+    def message_count(self) -> int:
+        """Количество сообщений в батче"""
+        return len(self.messages)
 
 class SmartBatchManager:
     def __init__(self):

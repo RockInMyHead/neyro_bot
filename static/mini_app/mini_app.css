@@ -20,9 +20,9 @@
     --text-secondary: #b0b0b0;
     --text-muted: #707070;
     
-    --accent-primary: #6366f1;
-    --accent-secondary: #8b5cf6;
-    --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --accent-primary: #199bfd;
+    --accent-secondary: #0d6efd;
+    --accent-gradient: linear-gradient(135deg, #199bfd 0%, #0d6efd 100%);
     
     --success: #10b981;
     --border-color: rgba(255, 255, 255, 0.1);
@@ -308,6 +308,10 @@ body {
     flex-direction: row-reverse;
 }
 
+.bot-message {
+    flex-direction: row;
+}
+
 .message-bubble {
     max-width: 75%;
     display: flex;
@@ -323,6 +327,25 @@ body {
     background: rgba(99, 102, 241, 0.15);
     border: 1px solid rgba(99, 102, 241, 0.3);
     color: var(--text-primary);
+}
+
+.message-content hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 10px 0;
+}
+
+.message-content strong {
+    font-weight: 600;
+    color: #333;
+}
+
+.bot-message .message-content strong {
+    color: white !important;
+}
+
+.bot-message .message-content {
+    color: white;
 }
 
 .user-message .message-content {

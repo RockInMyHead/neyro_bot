@@ -78,7 +78,7 @@ function updateUserInfo(user) {
     console.log('updateUserInfo called with:', user);
     const header = document.querySelector('.header p');
     if (header && user.first_name) {
-        header.textContent = `с ВАС идеи — с НАС воплощение`;
+        header.textContent = ``;
     }
 }
 
@@ -264,10 +264,30 @@ function disableChatInput() {
 }
 
 // Добавление сообщения в чат
+// Функция для преобразования Markdown в HTML
+function markdownToHtml(text) {
+    if (!text) return '';
+    
+    return text
+        // Преобразуем **текст** в <strong>текст</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Преобразуем --- в горизонтальную линию
+        .replace(/^---$/gm, '<hr>')
+        // Преобразуем переносы строк в <br>
+        .replace(/\n/g, '<br>');
+}
+
 function addMessageToChat(message, isUser = false, timestamp = null) {
     const chatMessages = document.getElementById('chat-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+    
+    // Отладочная информация
+    console.log('Добавление сообщения:', {
+        message: message.substring(0, 50) + '...',
+        isUser: isUser,
+        className: messageDiv.className
+    });
     
     const time = timestamp || new Date().toLocaleTimeString('ru-RU', {
         hour: '2-digit',
@@ -275,7 +295,7 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     });
     
     messageDiv.innerHTML = `
-        <div class="message-content">${message}</div>
+        <div class="message-content">${markdownToHtml(message)}</div>
         <div class="message-time">${time}</div>
     `;
     
@@ -525,7 +545,7 @@ async function getLatestMessage() {
             // Проверяем, не получали ли мы уже это сообщение
             if (data.timestamp > lastMessageTimestamp) {
                 // Добавляем сообщение в чат
-                addMessageToChat(data.message, 'bot');
+                addMessageToChat(data.message, false);
                 
                 // Активируем блок ввода после получения сообщения от админа
                 enableChatInput();
