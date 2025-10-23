@@ -10,7 +10,7 @@ import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from config import BOT_TOKEN
-from openai_client import get_openai_response, test_openai_connection
+from openai_client import get_openai_response, test_openai_connection, get_quick_response
 from message_collector import message_collector
 from simple_message_db import message_db
 from question_system import question_system
@@ -32,6 +32,7 @@ class UserState:
     """Класс для управления состоянием пользователя"""
     def __init__(self, user_id):
         self.user_id = user_id
+        self.has_started = False
         self.is_waiting_for_response = False
         self.last_message_time = 0
         self.message_count = 0
@@ -98,6 +99,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_state = get_user_state(user.id)
     
+    # Не шлем старт, если уже отправляли
+    if user_state.has_started:
+        return
+    user_state.has_started = True
     # Сохраняем пользователя в реестр для рассылок
     save_user_to_registry(user.id, user.username, user.first_name)
     
@@ -321,46 +326,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         except Exception as e:
             logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
         
-        # Отправляем короткий ответ пользователю
+        # Отправляем оценочный ответ от LLM
         try:
-            # Формируем короткий ответ с упоминанием сообщения пользователя
-            # Берем первые 1-3 слова из ответа пользователя
-            words = user_message.split()[:3]
-            short_user_text = ' '.join(words)
-            
-            # Ограничиваем длину до 30 символов
-            if len(short_user_text) > 30:
-                short_user_text = short_user_text[:27] + '...'
-            
-            simple_response = f"{short_user_text} - здорово, спасибо! 😊"
-            
-            # Отправляем ответ пользователю
-            await update.message.reply_text(simple_response)
-            
-            # Добавляем ответ в историю пользователя
-            user_state.add_message(simple_response, is_user=False)
-            
-            # Сохраняем ответ бота в файловую БД
+            # Получаем короткую AI-оценку (2-3 слова)
+            ai_response = await get_quick_response(user_message)
+            # Отправляем пользователю
+            await update.message.reply_text(ai_response)
+            # Сохраняем в историю
+            user_state.add_message(ai_response, is_user=False)
+            # Сохраняем в БД
             message_db.add_message(
                 user_id=user.id,
                 username=user.username or f"user_{user.id}",
                 first_name=user.first_name,
-                message=simple_response,
+                message=ai_response,
                 source='bot'
             )
-            
-            logger.info(f"Короткий ответ отправлен пользователю {user.first_name} (ID: {user.id})")
-            
+            logger.info(f"AI-ответ отправлен пользователю {user.first_name} (ID: {user.id}): {ai_response}")
         except Exception as e:
-            logger.error(f"Ошибка при отправке ответа пользователю: {e}")
-            # Fallback - альтернативный короткий ответ
+            logger.error(f"Ошибка при отправке AI-ответа пользователю: {e}")
+            # Фоллбэк короткий ответ
             fallback_response = "Спасибо! 👍"
             await update.message.reply_text(fallback_response)
-            
-            # Добавляем fallback в историю
             user_state.add_message(fallback_response, is_user=False)
-            
-            # Сохраняем fallback в БД
             message_db.add_message(
                 user_id=user.id,
                 username=user.username or f"user_{user.id}",
