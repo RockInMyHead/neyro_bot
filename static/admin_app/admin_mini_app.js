@@ -1459,10 +1459,14 @@ function startSmartBatchAutoUpdate() {
 // Загрузка сгенерированных изображений
 async function loadGeneratedImages() {
     try {
+        console.log('🖼️ Загружаем сгенерированные изображения...');
         const response = await fetch('/api/admin/smart-batches/images');
         const data = await response.json();
         
+        console.log('📊 Данные изображений:', data);
+        
         if (data.success) {
+            console.log(`✅ Загружено ${data.images.length} изображений`);
             updateImagesGridDisplay(data.images);
         } else {
             console.error('Ошибка загрузки изображений:', data.error);
@@ -1474,13 +1478,21 @@ async function loadGeneratedImages() {
 
 // Обновление отображения сетки изображений
 function updateImagesGridDisplay(images) {
+    console.log('🎨 Обновляем отображение изображений:', images);
     const imagesGrid = document.getElementById('images-grid');
     
+    if (!imagesGrid) {
+        console.error('❌ Элемент images-grid не найден');
+        return;
+    }
+    
     if (!images || images.length === 0) {
+        console.log('📭 Нет изображений для отображения');
         imagesGrid.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Нет сгенерированных изображений</div>';
         return;
     }
     
+    console.log(`🖼️ Создаем ${images.length} карточек изображений`);
     imagesGrid.innerHTML = images.map(image => `
         <div class="image-card" onclick="openImageModal('${image.image_url}', '${image.mixed_text}')">
             <img src="${image.image_url}" alt="${image.mixed_text}" loading="lazy">
@@ -1490,12 +1502,14 @@ function updateImagesGridDisplay(images) {
                     <div class="image-card-time">${formatTime(image.completed_at)}</div>
                     <div class="image-card-stats">
                         <span class="image-card-stat messages">${image.message_count} сообщ.</span>
-                        <span class="image-card-stat time">${image.processing_time.toFixed(1)}с</span>
+                        <span class="image-card-stat time">${image.processing_time ? image.processing_time.toFixed(1) : 'N/A'}с</span>
                     </div>
                 </div>
             </div>
         </div>
     `).join('');
+    
+    console.log('✅ Карточки изображений созданы');
 }
 
 // Форматирование времени
