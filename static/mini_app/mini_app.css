@@ -137,6 +137,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    height: calc(100vh - 80px); /* Максимальная высота экрана */
+    max-height: calc(100vh - 80px); /* Ограничиваем максимальную высоту */
 }
 
 /* Header */
@@ -253,7 +255,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: 400px; /* Фиксированная высота для прокрутки */
+    height: calc(100vh - 120px); /* Максимальная высота экрана минус отступы */
+    max-height: calc(100vh - 120px); /* Ограничиваем максимальную высоту */
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: rgba(10, 10, 10, 0.5);
@@ -602,6 +605,13 @@ body {
     .chat-container {
         flex: 1;
         min-height: 0;
+        height: calc(100vh - 100px); /* Адаптивная высота для мобильных */
+        max-height: calc(100vh - 100px);
+    }
+    
+    .chat-card {
+        height: calc(100vh - 60px); /* Адаптивная высота для мобильных */
+        max-height: calc(100vh - 60px);
     }
     
     .message-bubble {
@@ -612,6 +622,16 @@ body {
 @media (max-width: 360px) {
     .card {
         padding: 16px;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 80px); /* Еще более компактная высота */
+        max-height: calc(100vh - 80px);
+    }
+    
+    .chat-card {
+        height: calc(100vh - 40px); /* Еще более компактная высота */
+        max-height: calc(100vh - 40px);
     }
     
     .logo-image {
