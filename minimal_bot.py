@@ -36,8 +36,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "Добро пожаловать! Выберите действие:",
-        reply_markup=reply_markup
+        "🎭 **Добро пожаловать в Neuroevent Bot!** 🎭\n\nПривет! 👋\n\nЯ — ваш виртуальный помощник на концерте Main Strings Orchestra.\n\n💬 **Просто напишите мне что угодно!**\n\n🎯 **Готов к общению!**",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
     )
 
 # Обработчик команды /app
@@ -50,8 +51,9 @@ async def app_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     reply_markup = InlineKeyboardMarkup([[mini_app_button]])
     
     await update.message.reply_text(
-        "Добро пожаловать! Выберите действие:",
-        reply_markup=reply_markup
+        "🎭 **Добро пожаловать в Neuroevent Bot!** 🎭\n\nПривет! 👋\n\nЯ — ваш виртуальный помощник на концерте Main Strings Orchestra.\n\n💬 **Просто напишите мне что угодно!**\n\n🎯 **Готов к общению!**",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
     )
 
 # Обработчик для автоматического показа Mini App
@@ -67,8 +69,9 @@ async def show_mini_app_button(update: Update, context: ContextTypes.DEFAULT_TYP
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "Добро пожаловать! Выберите действие:",
-        reply_markup=reply_markup
+        "🎭 **Добро пожаловать в Neuroevent Bot!** 🎭\n\nПривет! 👋\n\nЯ — ваш виртуальный помощник на концерте Main Strings Orchestra.\n\n💬 **Просто напишите мне что угодно!**\n\n🎯 **Готов к общению!**",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
     )
 
 # Обработчик текстовых сообщений
