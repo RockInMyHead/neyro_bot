@@ -1281,8 +1281,8 @@ async function loadSmartBatchStats() {
         const response = await fetch('/api/admin/smart-batches/stats');
         const data = await response.json();
         
-        if (data.success && data.stats) {
-            updateSmartBatchStatsDisplay(data.stats, data.processor_stats);
+        if (data.success) {
+            updateSmartBatchStatsDisplay(data.batch_stats, data.processor_stats);
         }
     } catch (error) {
         console.error('Ошибка загрузки статистики батчей:', error);
@@ -1333,53 +1333,44 @@ function updateSmartBatchStatsDisplay(batchStats, processorStats) {
     
     if (!statsContainer) return;
     
-    // Проверяем, что batchStats существует и содержит нужные поля
-    if (!batchStats) {
-        console.error('batchStats is undefined');
-        if (statsSummary) {
-            statsSummary.textContent = '📊 Статистика недоступна';
-        }
-        return;
-    }
-    
     // Обновляем заголовок выпадающего списка
     if (statsSummary) {
-        statsSummary.textContent = `📊 Сообщений: ${batchStats.total_messages || 0} | Батчей: ${batchStats.total_batches || 0} | Завершено: ${batchStats.completed_batches || 0}`;
+        statsSummary.textContent = `📊 Сообщений: ${batchStats.total_messages} | Батчей: ${batchStats.total_batches} | Завершено: ${batchStats.completed_batches}`;
     }
     
     const html = `
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-label">Сообщений в очереди</div>
-                <div class="stat-value">${batchStats.total_messages || 0}</div>
+                <div class="stat-value">${batchStats.total_messages}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Всего батчей</div>
-                <div class="stat-value">${batchStats.total_batches || 0}</div>
+                <div class="stat-value">${batchStats.total_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Ожидают обработки</div>
-                <div class="stat-value pending">${batchStats.pending_batches || 0}</div>
+                <div class="stat-value pending">${batchStats.pending_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">В обработке</div>
-                <div class="stat-value processing">${batchStats.processing_batches || 0}</div>
+                <div class="stat-value processing">${batchStats.processing_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">С миксом</div>
-                <div class="stat-value mixed">${batchStats.mixed_batches || 0}</div>
+                <div class="stat-value mixed">${batchStats.mixed_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Генерация</div>
-                <div class="stat-value generating">${batchStats.generating_batches || 0}</div>
+                <div class="stat-value generating">${batchStats.generating_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Завершено</div>
-                <div class="stat-value completed">${batchStats.completed_batches || 0}</div>
+                <div class="stat-value completed">${batchStats.completed_batches}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Ошибки</div>
-                <div class="stat-value failed">${batchStats.failed_batches || 0}</div>
+                <div class="stat-value failed">${batchStats.failed_batches}</div>
             </div>
         </div>
         <div class="processor-stats">

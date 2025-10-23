@@ -32,6 +32,10 @@ class UserState:
     """Класс для управления состоянием пользователя"""
     def __init__(self, user_id):
         self.user_id = user_id
+        # Флаг ожидания ответа на админ-вопрос
+        self.awaiting_answer = False
+        # Последний вопрос администратора, на который отвечали
+        self.last_question = None
         self.has_started = False
         self.is_waiting_for_response = False
         self.last_message_time = 0
@@ -99,9 +103,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_state = get_user_state(user.id)
     
-    # Не шлем старт, если уже отправляли
-    if user_state.has_started:
-        return
+    # Всегда отвечаем на /start и отмечаем начало сессии
     user_state.has_started = True
     # Сохраняем пользователя в реестр для рассылок
     save_user_to_registry(user.id, user.username, user.first_name)
@@ -245,130 +247,50 @@ async def reset_questions_command(update: Update, context: ContextTypes.DEFAULT_
 
 # Обработчик текстовых сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обрабатывает обычные текстовые сообщения с помощью OpenAI"""
+    """Обрабатывает ответы пользователей: отвечает на админ-вопросы и на спам стандартным сообщением"""
     user_message = update.message.text
     user = update.effective_user
     user_state = get_user_state(user.id)
-    
-    # Проверяем частоту сообщений (защита от спама)
+    # Защита от спама по частоте
     current_time = time.time()
-    if current_time - user_state.last_message_time < 2:  # Минимум 2 секунды между сообщениями
-        return  # Просто игнорируем слишком частые сообщения
-    
+    if current_time - user_state.last_message_time < 2:
+        return
     user_state.last_message_time = current_time
     user_state.message_count += 1
-    
-    # Выводим сообщение пользователя в консоль
-    print(f"📨 Получено сообщение от {user.first_name} (ID: {user.id}): {user_message}")
-    
-    # Сохраняем пользователя в реестр (для рассылок)
-    save_user_to_registry(user.id, user.username, user.first_name)
-    
-    # Добавляем сообщение в историю пользователя (локально)
-    user_state.add_message(user_message, is_user=True)
-    # Если есть контекст (вопрос администратора), устанавливаем флаг ожидания ответа
-    if context_message and not user_state.is_waiting_for_response:
-        user_state.is_waiting_for_response = True
-    
-    # Сначала проверяем chat_history пользователя
-    if user_state.chat_history:
-        for msg in reversed(user_state.chat_history):
-            if not msg['is_user'] and ('📽️' in msg['message'] or '🎬' in msg['message'] or 'фильм' in msg['message'].lower() or '**' in msg['message']):
-                context_message = msg['message']
-                break
-    
-    # Если не нашли в chat_history, ищем в базе данных сообщений от администратора
-    if not context_message:
+
+    # Определяем текст последнего вопроса администратора
+    context_question = None
+    # Локальная история
+    for m in reversed(user_state.chat_history):
+        if not m['is_user'] and ('📽️' in m['message'] or '🎬' in m['message']):
+            context_question = m['message']
+            break
+    else:
         try:
             message_db.load_messages()
-            # Ищем последние сообщения от администратора (они доступны ВСЕМ пользователям)
-            # Сообщения от админа имеют user_id=0 и source='admin'
-            admin_messages = [msg for msg in message_db.messages 
-                            if msg.get('source') == 'admin' and 
-                               ('📽️' in msg.get('message', '') or '🎬' in msg.get('message', '') or 'фильм' in msg.get('message', '').lower() or '**' in msg.get('message', ''))]
-            
-            if admin_messages:
-                # Берем самое последнее сообщение от администратора
-                latest_admin_msg = max(admin_messages, key=lambda x: x.get('timestamp', 0))
-                context_message = latest_admin_msg.get('message', '')
-                logger.info(f"🔍 Найден контекст от админа в БД: {context_message[:100]}...")
+            for m in reversed(message_db.messages):
+                if m.get('source') == 'admin' and ('📽️' in m.get('message','') or '🎬' in m.get('message','')):
+                    context_question = m.get('message')
+                    break
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка при поиске контекста в БД: {e}")
-    
-    if context_message and user_state.is_waiting_for_response:
-        # Есть контекст - это ответ на вопрос администратора
-        # СОХРАНЯЕМ сообщение пользователя в БД
-        logger.info(f"✅ Сообщение является ответом на вопрос администратора - сохраняем в БД")
-        
-        # Добавляем сообщение в коллектор для админ бота
-        message_collector.add_message(
-            user_id=user.id,
-            username=user.username,
-            first_name=user.first_name,
-            message=user_message,
-            source='telegram'
-        )
-        
-        # Сохраняем в файловую БД для админ-панели
-        message_db.add_message(
-            user_id=user.id,
-            username=user.username or f"user_{user.id}",
-            first_name=user.first_name,
-            message=user_message,
-            source='telegram'
-        )
-        
-        # Добавляем в систему умных батчей
-        try:
-            msg_id = smart_batch_manager.add_message(user.id, user.username, user.first_name, user_message)
-            logger.info(f"✅ Сообщение добавлено в SmartBatchManager: {msg_id}")
-        except Exception as e:
-            logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
-        
-        # Отправляем оценочный ответ от LLM
-        try:
-            # Фиксированный ответ после ответа пользователя на вопрос администратора
-            fixed_response = "Спасибо за ответ! Наслаждайтесь музыкой и визуальным рядом по вашим идеям ✨"
-            await update.message.reply_text(fixed_response)
-            user_state.add_message(fixed_response, is_user=False)
-            message_db.add_message(
-                user_id=user.id,
-                username=user.username or f"user_{user.id}",
-                first_name=user.first_name,
-                message=fixed_response,
-                source='bot'
-            )
-            logger.info(f"Fixed ответ отправлен пользователю {user.first_name} (ID: {user.id})")
-        except Exception as e:
-            logger.error(f"Ошибка при отправке фиксированного ответа пользователю: {e}")
-            # Фоллбэк короткий ответ
-            fallback_response = "Спасибо! 👍"
-            await update.message.reply_text(fallback_response)
-            user_state.add_message(fallback_response, is_user=False)
-            message_db.add_message(
-                user_id=user.id,
-                username=user.username or f"user_{user.id}",
-                first_name=user.first_name,
-                message=fallback_response,
-                source='bot'
-            )
-        # Сброс флага ожидания после первого ответа
-        user_state.is_waiting_for_response = False
+            logger.warning(f"⚠️ Ошибка получения контекста: {e}")
+
+    # Если найден новый вопрос админа, устанавливаем ожидание ответа
+    if context_question and context_question != user_state.last_question:
+        user_state.awaiting_answer = True
+        user_state.last_question = context_question
+
+    if user_state.awaiting_answer:
+        # Первый ответ на текущий вопрос администратора
+        fixed_response = "Спасибо за ответ! Наслаждайтесь музыкой и визуальным рядом по вашим идеям ✨"
+        await update.message.reply_text(fixed_response)
+        user_state.add_message(fixed_response, is_user=False)
+        user_state.awaiting_answer = False
     else:
-        # Произвольное сообщение или повторный ответ (спам)
-        logger.info(f"⚠️ Произвольное сообщение (без контекста вопроса администратора) - НЕ сохраняем в БД")
-        logger.info(f"📝 Сообщение: {user_message[:100]}...")
-        
-        # Стандартный ответ
+        # Любое другое сообщение
         standard_response = "Пожалуйста, ожидайте, я пришлю анонс перед началом композиции 😌"
         await update.message.reply_text(standard_response)
-        
-        # Добавляем ответ в историю пользователя (локально)
         user_state.add_message(standard_response, is_user=False)
-        
-        # НЕ сохраняем ответ бота в файловую БД для произвольных сообщений
-        
-        logger.info(f"Стандартный ответ отправлен пользователю {user.first_name} (ID: {user.id})")
 
 # Обработчик кнопок удален - кнопки больше не используются
 
