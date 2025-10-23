@@ -54,11 +54,6 @@
                             maxlength="500"
                             autocomplete="off"
                         >
-                        <button class="chat-clear-btn" onclick="clearChatHistory()" aria-label="Очистить чат" title="Очистить историю чата">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M3 6h14M8 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2M19 6v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
                         <button class="chat-send-btn" onclick="sendChatMessage()" aria-label="Отправить">
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                 <path d="M2 10L18 2L12 18L9 11L2 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -75,6 +70,6 @@
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='mini_app/mini_app.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='mini_app/mini_app.js') }}?v=21"></script>
 </body>
 </html>

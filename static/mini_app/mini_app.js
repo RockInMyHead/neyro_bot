@@ -305,35 +305,6 @@ function restoreChatFromHistory() {
     console.log('🔄 Чат восстановлен из истории:', chatHistory.length, 'сообщений');
 }
 
-// Очистка истории чата
-function clearChatHistory() {
-    const confirmed = confirm('Вы уверены, что хотите очистить историю чата?\n\nЭто действие нельзя отменить.');
-    
-    if (confirmed) {
-        // Очищаем историю
-        chatHistory = [];
-        
-        // Очищаем localStorage
-        localStorage.removeItem('neuroevent_chat');
-        
-        // Очищаем DOM (кроме первого приветственного сообщения)
-        const chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
-            const existingMessages = chatMessages.querySelectorAll('.message');
-            for (let i = 1; i < existingMessages.length; i++) {
-                existingMessages[i].remove();
-            }
-        }
-        
-        console.log('🗑️ История чата очищена');
-        
-        // Показываем уведомление пользователю
-        if (tg.showAlert) {
-            tg.showAlert('История чата очищена');
-        }
-    }
-}
-
 // Включение блока ввода сообщений
 function enableChatInput() {
     const chatInput = document.getElementById('chat-input');
@@ -714,4 +685,3 @@ window.sendChatMessage = sendChatMessage;
 window.handleBotData = handleBotData;
 window.enableChatInput = enableChatInput;
 window.disableChatInput = disableChatInput;
-window.clearChatHistory = clearChatHistory;
