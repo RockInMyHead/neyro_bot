@@ -1078,6 +1078,67 @@ function startChatClearMonitoring() {
     setInterval(checkChatClearStatus, 3000);
 }
 
+// Функция для обработки изменения размера viewport (клавиатура на мобильных)
+function handleViewportChange() {
+    const chatContainer = document.querySelector('.chat-container');
+    const chatCard = document.querySelector('.chat-card');
+    const chatMessages = document.querySelector('.chat-messages');
+    
+    if (!chatContainer || !chatCard || !chatMessages) return;
+    
+    // Получаем текущую высоту viewport
+    const viewportHeight = window.innerHeight;
+    
+    console.log('🔄 Изменение размера viewport:', viewportHeight);
+    
+    // Если высота viewport меньше 500px (клавиатура появилась)
+    if (viewportHeight < 500) {
+        console.log('📱 Клавиатура появилась, корректируем размеры чата');
+        
+        // Устанавливаем фиксированную высоту для чата
+        const chatHeight = Math.max(200, viewportHeight - 100);
+        
+        chatContainer.style.height = `${chatHeight}px`;
+        chatContainer.style.maxHeight = `${chatHeight}px`;
+        chatContainer.style.minHeight = '200px';
+        
+        chatCard.style.height = `${chatHeight}px`;
+        chatCard.style.maxHeight = `${chatHeight}px`;
+        chatCard.style.minHeight = '200px';
+        
+        // Уменьшаем отступы в сообщениях
+        chatMessages.style.padding = '10px';
+        
+        // Прокручиваем к последнему сообщению
+        setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+        
+    } else {
+        console.log('📱 Клавиатура скрыта, восстанавливаем размеры чата');
+        
+        // Восстанавливаем обычные размеры
+        chatContainer.style.height = 'calc(100vh - 5vh)';
+        chatContainer.style.maxHeight = 'calc(100vh - 5vh)';
+        chatContainer.style.minHeight = '300px';
+        
+        chatCard.style.height = 'calc(100vh - 5vh)';
+        chatCard.style.maxHeight = 'calc(100vh - 5vh)';
+        chatCard.style.minHeight = '300px';
+        
+        // Восстанавливаем отступы в сообщениях
+        chatMessages.style.padding = '20px';
+    }
+}
+
+// Добавляем обработчик изменения размера окна
+window.addEventListener('resize', handleViewportChange);
+
+// Добавляем обработчик изменения ориентации
+window.addEventListener('orientationchange', () => {
+    setTimeout(handleViewportChange, 100);
+});
+
 // Экспорт функций для использования в HTML
 window.sendMessage = sendMessage;
 window.sendChatMessage = sendChatMessage;
@@ -1085,3 +1146,4 @@ window.handleBotData = handleBotData;
 window.enableChatInput = enableChatInput;
 window.disableChatInput = disableChatInput;
 window.scrollToBottom = scrollToBottom;
+window.handleViewportChange = handleViewportChange;

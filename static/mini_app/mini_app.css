@@ -264,6 +264,8 @@ body {
     overflow: hidden;
     background: rgba(10, 10, 10, 0.5);
     position: relative; /* Для кнопки прокрутки */
+    /* Исправление для мобильных устройств с клавиатурой */
+    min-height: 300px; /* Минимальная высота чата */
 }
 
 .chat-messages {
@@ -669,4 +671,55 @@ body {
     color: #888 !important;
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* Исправление для мобильных устройств с клавиатурой */
+@media (max-height: 500px) {
+    .chat-container {
+        height: 300px !important;
+        max-height: 300px !important;
+        min-height: 200px !important;
+    }
+    
+    .chat-card {
+        height: 300px !important;
+        max-height: 300px !important;
+        min-height: 200px !important;
+    }
+    
+    .chat-messages {
+        padding: 10px;
+    }
+    
+    .logo {
+        padding: 8px;
+    }
+    
+    .logo-image {
+        max-height: 150px;
+    }
+}
+
+/* Дополнительные стили для очень маленьких экранов */
+@media (max-height: 400px) {
+    .chat-container {
+        height: 250px !important;
+        max-height: 250px !important;
+        min-height: 150px !important;
+    }
+    
+    .chat-card {
+        height: 250px !important;
+        max-height: 250px !important;
+        min-height: 150px !important;
+    }
+    
+    .chat-messages {
+        padding: 8px;
+    }
+    
+    .message-bubble {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
 }
