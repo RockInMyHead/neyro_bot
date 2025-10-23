@@ -165,8 +165,8 @@ body {
     object-fit: contain;
     filter: brightness(0.9);
     transition: all 0.3s ease;
-    /* Обрезаем 50px сверху и 50px снизу */
-    clip-path: inset(50px 0 50px 0);
+    /* Обрезаем 20px сверху и 20px снизу */
+    clip-path: inset(20px 0 20px 0);
 }
 
 .logo-image:hover {
@@ -607,8 +607,8 @@ body {
     
     .logo-image {
         max-height: 250px;
-        /* Обрезаем 50px сверху и 50px снизу для мобильных */
-        clip-path: inset(50px 0 50px 0);
+        /* Обрезаем 20px сверху и 20px снизу для мобильных */
+        clip-path: inset(20px 0 20px 0);
     }
     
     .chat-container {
@@ -649,8 +649,8 @@ body {
     
     .logo-image {
         max-height: 200px;
-        /* Обрезаем 50px сверху и 50px снизу для маленьких экранов */
-        clip-path: inset(50px 0 50px 0);
+        /* Обрезаем 20px сверху и 20px снизу для маленьких экранов */
+        clip-path: inset(20px 0 20px 0);
     }
     
     .chat-messages {
