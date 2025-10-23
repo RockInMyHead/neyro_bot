@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Импортируем функцию для получения текущего базового промта
 try:
-    from app import get_current_base_prompt
+    from prompt_manager import get_current_base_prompt
 except ImportError:
     # Fallback для случаев, когда импорт не работает
     def get_current_base_prompt():

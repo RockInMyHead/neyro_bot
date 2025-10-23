@@ -32,12 +32,8 @@ import requests
 import base64
 from config import BOT_TOKEN, GENERATED_IMAGES_FOLDER, NEW_BOT_TOKEN
 
-# Глобальная переменная для хранения текущего базового промта
-current_base_prompt = "Мрачный кинематографичный реализм во вселенной Пиратов карибского моря; деревянные корабли с парусами и пушками; пираты; морская дымка, контраст, рим-свет; палитра: сталь/свинец воды, изумруд/бирюза, мох, мокрое дерево, патина бронзы, янтарные блики; фактуры: соль на канатах, камень, рваная парусина, брызги; широкий план, масштаб, без крупных лиц"
-
-def get_current_base_prompt():
-    """Возвращает текущий базовый промт для генерации изображений"""
-    return current_base_prompt
+# Импортируем менеджер промтов
+from prompt_manager import get_current_base_prompt, update_base_prompt, get_prompt_info
 
 def auto_generation_worker():
     """
@@ -1088,9 +1084,8 @@ def admin_update_base_prompt():
         prompt_type = data['prompt_type']
         prompt_content = data['prompt_content']
         
-        # Обновляем глобальную переменную с текущим базовым промтом
-        global current_base_prompt
-        current_base_prompt = prompt_content
+        # Обновляем базовый промт через менеджер
+        update_base_prompt(prompt_content)
         
         logger.info(f"Обновление базового промта ({prompt_type}): {prompt_content[:100]}...")
         logger.info(f"✅ Базовый промт для генерации изображений обновлен")
