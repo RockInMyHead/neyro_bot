@@ -1414,10 +1414,15 @@ function updateSmartBatchListDisplay(batches) {
         return;
     }
     
-    const html = batches.map(batch => `
+    const html = batches.map(batch => {
+        // Поддерживаем оба варианта названия поля для совместимости
+        const batchId = batch.batch_id || batch.id || 'unknown';
+        const shortId = batchId.substring(0, 8);
+        
+        return `
         <div class="batch-item status-${batch.status}">
             <div class="batch-header">
-                <span class="batch-id">Батч ${batch.id.substring(0, 8)}</span>
+                <span class="batch-id">Батч ${shortId}</span>
                 <span class="batch-status status-${batch.status}">${getStatusText(batch.status)}</span>
             </div>
             <div class="batch-details">
@@ -1428,7 +1433,8 @@ function updateSmartBatchListDisplay(batches) {
                 ${batch.error_message ? `<p class="error"><strong>Ошибка:</strong> ${batch.error_message}</p>` : ''}
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     listContainer.innerHTML = html;
 }
