@@ -1196,10 +1196,21 @@ last_admin_message_time = 0
 def check_chat_clear_status():
     """Проверяет, была ли очищена история чата"""
     global chat_clear_timestamp
+    
+    # Если есть timestamp очистки, возвращаем его и сбрасываем
+    if chat_clear_timestamp is not None:
+        timestamp = chat_clear_timestamp
+        chat_clear_timestamp = None  # Сбрасываем после получения
+        return jsonify({
+            "success": True,
+            "chat_cleared": True,
+            "clear_timestamp": timestamp
+        })
+    
     return jsonify({
         "success": True,
-        "chat_cleared": chat_clear_timestamp is not None,
-        "clear_timestamp": chat_clear_timestamp
+        "chat_cleared": False,
+        "clear_timestamp": None
     })
 
 @app.route('/api/admin/update-base-prompt', methods=['POST'])
