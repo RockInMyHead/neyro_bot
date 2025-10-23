@@ -620,12 +620,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Функция для переключения между режимами просмотра и редактирования
 function toggleEdit(fieldId) {
+    console.log('🔧 toggleEdit вызвана для поля:', fieldId);
+    
     const displayElement = document.getElementById(fieldId);
     const editElement = document.getElementById(fieldId + '-edit');
     const editBtn = displayElement.parentElement.querySelector('.edit-btn');
     
+    console.log('🔍 Найденные элементы:', {
+        displayElement: !!displayElement,
+        editElement: !!editElement,
+        editBtn: !!editBtn,
+        displayElementId: displayElement?.id,
+        editElementId: editElement?.id
+    });
+    
     if (!displayElement || !editElement || !editBtn) {
-        console.error('Элементы для редактирования не найдены:', fieldId);
+        console.error('❌ Элементы для редактирования не найдены:', fieldId);
         return;
     }
     
@@ -657,7 +667,11 @@ function toggleEdit(fieldId) {
             editElement.focus();
             editElement.select();
         }, 100);
+        
+        console.log('✅ Переключились в режим редактирования для:', fieldId);
     }
+    
+    console.log('🎯 toggleEdit завершена для поля:', fieldId);
 }
 
 // Функция для сохранения всех изменений

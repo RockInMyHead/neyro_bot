@@ -134,7 +134,9 @@
                                 <label>Название фильма:</label>
                                 <div class="content-display" id="current-prompt-title">Выберите промт</div>
                                 <textarea class="content-edit" id="current-prompt-title-edit" style="display: none;"></textarea>
-                                <button class="btn-small edit-btn" onclick="toggleEdit('current-prompt-title')">✏️</button>
+                                <div class="content-actions">
+                                    <button class="btn-small edit-btn" onclick="toggleEdit('current-prompt-title')">✏️</button>
+                                </div>
                             </div>
                             <div class="content-item">
                                 <label>Короткое описание:</label>
@@ -191,6 +193,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=30"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=31"></script>
 </body>
 </html>
