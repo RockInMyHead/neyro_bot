@@ -158,7 +158,7 @@ body {
 }
 
 .logo-image {
-    height: 300px;
+    max-height: 300px;
     width: auto;
     max-width: 100%;
     object-fit: contain;
@@ -601,7 +601,7 @@ body {
     }
     
     .logo-image {
-        height: 250px;
+        max-height: 250px;
         /* Обрезаем 50px сверху и 50px снизу для мобильных */
         clip-path: inset(50px 0 50px 0);
     }
@@ -639,7 +639,7 @@ body {
     }
     
     .logo-image {
-        height: 200px;
+        max-height: 200px;
         /* Обрезаем 50px сверху и 50px снизу для маленьких экранов */
         clip-path: inset(50px 0 50px 0);
     }
