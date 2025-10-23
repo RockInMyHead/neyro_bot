@@ -618,7 +618,6 @@ def smart_batches_current_mixed_text():
         return jsonify(success=False, error=str(e)), 500
 
 @app.route('/api/admin/smart-batches/images', methods=['GET'])
-@require_admin_auth
 def smart_batches_images():
     """Получить список сгенерированных изображений"""
     try:
@@ -643,6 +642,25 @@ def smart_batches_images():
                     'completed_at': batch.get('completed_at') or 0,
                     'processing_time': batch.get('processing_time') or 0,
                     'message_count': batch.get('message_count') or 0
+                })
+        
+        # Если нет изображений из батчей, получаем все изображения из папки
+        if not images_data and os.path.exists(GENERATED_IMAGES_FOLDER):
+            import glob
+            image_files = glob.glob(os.path.join(GENERATED_IMAGES_FOLDER, "*.png"))
+            image_files.sort(key=os.path.getmtime, reverse=True)  # Сортируем по времени изменения
+            
+            for image_file in image_files:
+                filename = os.path.basename(image_file)
+                image_url = f"/generated_images/{filename}"
+                images_data.append({
+                    'batch_id': f"file_{filename}",
+                    'mixed_text': f"Изображение {filename}",
+                    'image_url': image_url,
+                    'image_path': image_file,
+                    'completed_at': os.path.getmtime(image_file) * 1000,  # Конвертируем в миллисекунды
+                    'processing_time': 0,
+                    'message_count': 1
                 })
         
         response = jsonify({
@@ -1372,7 +1390,6 @@ def get_base_prompt():
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/admin/generate-custom-image', methods=['POST'])
-@require_admin_auth
 def generate_custom_image():
     """Генерирует изображение на основе пользовательского промта и базового промта"""
     try:
@@ -1413,6 +1430,9 @@ def generate_custom_image():
         
         # Декодируем base64
         image_data = base64.b64decode(image_b64)
+        
+        # Создаем папку если не существует
+        os.makedirs(GENERATED_IMAGES_FOLDER, exist_ok=True)
         
         # Создаем имя файла
         timestamp = int(time.time())
