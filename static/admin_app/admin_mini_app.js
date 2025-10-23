@@ -1702,6 +1702,12 @@ function initializePrompts() {
     loadPrompts();
     updatePromptDisplay();
     
+    // Явно выбираем первый промт для отображения названия фильма
+    if (concertPrompts.length > 0) {
+        selectPrompt(0);
+        console.log('🎯 Выбран первый промт:', concertPrompts[0].title);
+    }
+    
     console.log('✅ Промты инициализированы');
     console.log('🔍 Элементы DOM:', {
         dropdown: document.getElementById('prompt-dropdown'),
