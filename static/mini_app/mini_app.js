@@ -385,6 +385,18 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
         return;
     }
     
+    // Проверяем, есть ли уже такое сообщение в чате (только для бот-сообщений)
+    if (!isUser) {
+        const existingMessages = chatMessages.querySelectorAll('.message.bot-message');
+        for (let existingMsg of existingMessages) {
+            const existingContent = existingMsg.querySelector('.message-content');
+            if (existingContent && existingContent.textContent.trim() === message.trim()) {
+                console.log('🔄 Сообщение уже существует в чате, пропускаем дублирование');
+                return;
+            }
+        }
+    }
+    
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
     
@@ -739,17 +751,28 @@ async function getLatestMessage() {
                 
                 console.log('✅ Сообщение от администратора обработано:', data.message.substring(0, 50) + '...');
             } else if (data.is_recent && data.timestamp === lastMessageTimestamp) {
-                // Если сообщение недавнее, но timestamp тот же, возможно это дублирование
-                console.log('🔄 Обнаружено недавнее сообщение с тем же timestamp, проверяем...');
+                // Если сообщение недавнее, но timestamp тот же, проверяем дублирование
+                console.log('🔄 Обнаружено недавнее сообщение с тем же timestamp, проверяем дублирование...');
                 
                 // Проверяем, есть ли уже это сообщение в чате
                 const chatMessages = document.getElementById('chat-messages');
-                const lastBotMessage = chatMessages.querySelector('.message.bot-message:last-child');
+                const existingMessages = chatMessages.querySelectorAll('.message.bot-message');
+                let messageExists = false;
                 
-                if (!lastBotMessage || !lastBotMessage.textContent.includes(data.message.substring(0, 50))) {
+                for (let existingMsg of existingMessages) {
+                    const existingContent = existingMsg.querySelector('.message-content');
+                    if (existingContent && existingContent.textContent.trim() === data.message.trim()) {
+                        messageExists = true;
+                        break;
+                    }
+                }
+                
+                if (!messageExists) {
                     console.log('📨 Показываем недавнее сообщение, которого нет в чате');
                     addMessageToChat(data.message, false);
                     enableChatInput();
+                } else {
+                    console.log('🔍 Сообщение уже существует в чате, пропускаем дублирование');
                 }
             } else {
                 console.log('🔍 Сообщение уже было получено ранее или timestamp не изменился');
