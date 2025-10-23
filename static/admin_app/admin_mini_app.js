@@ -2022,6 +2022,26 @@ function savePromptEdit() {
         
         // Показываем уведомление
         showNotification('Промт успешно сохранен!', 'success');
+        
+        // Обновляем все поля интерфейса после изменения промта
+        updatePromptDisplay();
+        
+        // Обновляем поле "Название фильма"
+        const titleElement = document.getElementById('current-prompt-title');
+        if (titleElement) {
+            titleElement.textContent = concertPrompts[currentPromptIndex].title;
+            console.log('✅ Обновлено название фильма после сохранения:', concertPrompts[currentPromptIndex].title);
+        }
+        
+        // Обновляем поле актеров
+        const actorsElement = document.getElementById('generated-movie-actors');
+        if (actorsElement && concertPrompts[currentPromptIndex].actors) {
+            actorsElement.textContent = concertPrompts[currentPromptIndex].actors;
+            console.log('✅ Обновлено поле актеров после сохранения');
+        }
+        
+        // Генерируем новое описание фильма через LLM
+        generateFilmDescription(concertPrompts[currentPromptIndex].title, concertPrompts[currentPromptIndex].description);
     }
     
     // Выходим из режима редактирования
