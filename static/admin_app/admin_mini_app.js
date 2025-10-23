@@ -2195,7 +2195,7 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
             let description = data.description.trim();
             
             // Проверяем, не обрывается ли описание на середине предложения
-            if (description.length > 250) {
+            if (description.length > 200) {
                 // Ищем последнюю точку, восклицательный или вопросительный знак
                 const lastSentenceEnd = Math.max(
                     description.lastIndexOf('.'),
@@ -2203,12 +2203,12 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
                     description.lastIndexOf('?')
                 );
                 
-                if (lastSentenceEnd > 100) {
+                if (lastSentenceEnd > 50) {
                     // Обрезаем по последнему завершенному предложению
                     description = description.substring(0, lastSentenceEnd + 1);
                 } else {
                     // Если нет завершенных предложений, обрезаем аккуратно
-                    description = description.substring(0, 247) + '...';
+                    description = description.substring(0, 197) + '...';
                 }
             }
             
@@ -2219,8 +2219,8 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
             console.error('Ошибка генерации описания:', data.message);
             // Fallback - используем технический промпт как есть
             let fallbackDescription = technicalPrompt.trim();
-            if (fallbackDescription.length > 300) {
-                fallbackDescription = fallbackDescription.substring(0, 297) + '...';
+            if (fallbackDescription.length > 200) {
+                fallbackDescription = fallbackDescription.substring(0, 197) + '...';
             }
             descriptionElement.textContent = fallbackDescription;
             descriptionElement.style.color = '#666';
@@ -2229,8 +2229,8 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         console.error('Ошибка генерации описания фильма:', error);
         // Fallback - используем технический промпт как есть
         let fallbackDescription = technicalPrompt.trim();
-        if (fallbackDescription.length > 300) {
-            fallbackDescription = fallbackDescription.substring(0, 297) + '...';
+        if (fallbackDescription.length > 200) {
+            fallbackDescription = fallbackDescription.substring(0, 197) + '...';
         }
         descriptionElement.textContent = fallbackDescription;
         descriptionElement.style.color = '#666';
