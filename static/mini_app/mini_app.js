@@ -300,7 +300,9 @@ function restoreChatFromHistory() {
     });
     
     // Прокручиваем к последнему сообщению
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    setTimeout(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 100);
     
     console.log('🔄 Чат восстановлен из истории:', chatHistory.length, 'сообщений');
 }
@@ -385,7 +387,11 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     `;
     
     chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Плавная прокрутка к последнему сообщению
+    setTimeout(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 100);
     
     // Сохраняем в историю
     chatHistory.push({
@@ -461,7 +467,11 @@ function showTypingIndicator() {
     `;
     
     chatMessages.appendChild(typingDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Плавная прокрутка к индикатору печати
+    setTimeout(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 100);
     
     return typingDiv;
 }
@@ -714,9 +724,52 @@ function initChat() {
         
         // Запускаем проверку новых сообщений от админа
         startMessagePolling();
+        
+        // Инициализируем обработчик прокрутки
+        initScrollHandler();
     }
     
     // Первое сообщение уже есть в HTML, не добавляем дублирующее
+}
+
+// Функция для плавной прокрутки к последнему сообщению
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chat-messages');
+    const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+    
+    if (chatMessages) {
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Скрываем кнопку после прокрутки
+            if (scrollBtn) {
+                scrollBtn.classList.remove('show');
+            }
+        }, 100);
+    }
+}
+
+// Функция для показа/скрытия кнопки прокрутки
+function toggleScrollButton() {
+    const chatMessages = document.getElementById('chat-messages');
+    const scrollBtn = document.getElementById('scroll-to-bottom-btn');
+    
+    if (chatMessages && scrollBtn) {
+        const isAtBottom = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 10;
+        
+        if (isAtBottom) {
+            scrollBtn.classList.remove('show');
+        } else {
+            scrollBtn.classList.add('show');
+        }
+    }
+}
+
+// Инициализация обработчика прокрутки
+function initScrollHandler() {
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        chatMessages.addEventListener('scroll', toggleScrollButton);
+    }
 }
 
 // Экспорт функций для использования в HTML
@@ -725,3 +778,4 @@ window.sendChatMessage = sendChatMessage;
 window.handleBotData = handleBotData;
 window.enableChatInput = enableChatInput;
 window.disableChatInput = disableChatInput;
+window.scrollToBottom = scrollToBottom;

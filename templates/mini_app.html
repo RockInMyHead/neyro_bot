@@ -46,6 +46,13 @@
                         </div>
                     </div>
                     
+                    <!-- Кнопка прокрутки к последнему сообщению -->
+                    <button class="scroll-to-bottom-btn" id="scroll-to-bottom-btn" onclick="scrollToBottom()" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 3L10 17M10 17L3 10M10 17L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    
                     <div class="chat-input-container">
                         <input 
                             type="text" 
@@ -70,6 +77,6 @@
         </footer>
     </div>
     
-    <script src="{{ url_for('static', filename='mini_app/mini_app.js') }}?v=25"></script>
+    <script src="{{ url_for('static', filename='mini_app/mini_app.js') }}?v=26"></script>
 </body>
 </html>
