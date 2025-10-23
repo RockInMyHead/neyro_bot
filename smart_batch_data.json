@@ -1,0 +1,196 @@
+{
+  "messages": [],
+  "batches": [
+    {
+      "id": "8a9993b2-7e7f-4827-91e8-e6c5b899626c",
+      "messages": [
+        {
+          "id": "76255847-f523-43e2-a02f-e00e0c2551d8",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "река",
+          "timestamp": 1761255548.507612
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761255725.530257,
+      "mixed_text": "река",
+      "image_path": "generated_images/batch_8a9993b2_1761256029.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "93855f64-977a-4746-bfb5-42e9ce133e2d",
+      "messages": [
+        {
+          "id": "2cfc6efa-17b0-45f6-8503-e08f75078ab1",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "тест123",
+          "timestamp": 1761255691.09089
+        }
+      ],
+      "status": "generating",
+      "created_at": 1761255725.531277,
+      "mixed_text": "тест123",
+      "image_path": null,
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "785aa7ab-e5c3-4d96-ba69-b82607c612b9",
+      "messages": [
+        {
+          "id": "dbb1705c-49ea-4357-833b-94be1421f590",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "лес",
+          "timestamp": 1761256397.142244
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761256569.3557608,
+      "mixed_text": "лес",
+      "image_path": "generated_images/batch_785aa7ab_1761256579.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "1728d9a4-a7c1-414b-aea3-aedb2f47cfc4",
+      "messages": [
+        {
+          "id": "d730ca7c-bcfd-4500-bfb2-97270c9dc757",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "москва",
+          "timestamp": 1761256566.105678
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761256569.35583,
+      "mixed_text": "москва",
+      "image_path": "generated_images/batch_1728d9a4_1761256593.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "5ca675eb-1c05-434c-955c-f56c6d598e58",
+      "messages": [
+        {
+          "id": "33aff3ae-6eb1-4288-b764-8da48a92df44",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "река",
+          "timestamp": 1761256847.927785
+        }
+      ],
+      "status": "generating",
+      "created_at": 1761257292.41403,
+      "mixed_text": "река",
+      "image_path": null,
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "e403a893-cb03-474e-a655-cda5fba38158",
+      "messages": [
+        {
+          "id": "258b36e2-2b04-40f0-aafa-6305894e35b7",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "Москва",
+          "timestamp": 1761257198.907318
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761257292.414154,
+      "mixed_text": "Москва",
+      "image_path": "generated_images/batch_e403a893_1761257304.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "0b801751-9af7-40df-87ee-e7f885a187cf",
+      "messages": [
+        {
+          "id": "85312da5-3996-4e7a-82bf-5844d6c7b66f",
+          "user_id": 293218058,
+          "username": "alex_bigkush",
+          "first_name": "Александр",
+          "content": "Корабль космический",
+          "timestamp": 1761257291.992099
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761257292.4142668,
+      "mixed_text": "Корабль космический",
+      "image_path": "generated_images/batch_0b801751_1761257316.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "9c28868a-a7f2-46aa-bcfc-50210281255c",
+      "messages": [
+        {
+          "id": "438433e7-aa03-4db1-a17d-7842d41cbd13",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "машина",
+          "timestamp": 1761257968.34768
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761258210.779728,
+      "mixed_text": "машина",
+      "image_path": "generated_images/batch_9c28868a_1761258218.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "00816245-a0ef-48e4-bacc-afbd60a694b4",
+      "messages": [
+        {
+          "id": "a64b1775-5d69-4de0-a2b5-1bf48d4a50ab",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "солнце",
+          "timestamp": 1761258208.5052931
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761258210.7799082,
+      "mixed_text": "солнце",
+      "image_path": "generated_images/batch_00816245_1761258230.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    }
+  ],
+  "processed_message_ids": [
+    "2cfc6efa-17b0-45f6-8503-e08f75078ab1",
+    "258b36e2-2b04-40f0-aafa-6305894e35b7",
+    "85312da5-3996-4e7a-82bf-5844d6c7b66f",
+    "d730ca7c-bcfd-4500-bfb2-97270c9dc757",
+    "438433e7-aa03-4db1-a17d-7842d41cbd13",
+    "dbb1705c-49ea-4357-833b-94be1421f590",
+    "76255847-f523-43e2-a02f-e00e0c2551d8",
+    "a64b1775-5d69-4de0-a2b5-1bf48d4a50ab",
+    "33aff3ae-6eb1-4288-b764-8da48a92df44"
+  ]
+}

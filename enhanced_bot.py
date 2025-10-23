@@ -328,23 +328,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         
         # Отправляем оценочный ответ от LLM
         try:
-            # Получаем короткую AI-оценку (2-3 слова)
-            ai_response = await get_quick_response(user_message)
-            # Отправляем пользователю
-            await update.message.reply_text(ai_response)
-            # Сохраняем в историю
-            user_state.add_message(ai_response, is_user=False)
-            # Сохраняем в БД
+            # Фиксированный ответ после ответа пользователя на вопрос администратора
+            fixed_response = "Спасибо за ответ! Наслаждайтесь музыкой и визуальным рядом по вашим идеям ✨"
+            await update.message.reply_text(fixed_response)
+            user_state.add_message(fixed_response, is_user=False)
             message_db.add_message(
                 user_id=user.id,
                 username=user.username or f"user_{user.id}",
                 first_name=user.first_name,
-                message=ai_response,
+                message=fixed_response,
                 source='bot'
             )
-            logger.info(f"AI-ответ отправлен пользователю {user.first_name} (ID: {user.id}): {ai_response}")
+            logger.info(f"Fixed ответ отправлен пользователю {user.first_name} (ID: {user.id})")
         except Exception as e:
-            logger.error(f"Ошибка при отправке AI-ответа пользователю: {e}")
+            logger.error(f"Ошибка при отправке фиксированного ответа пользователю: {e}")
             # Фоллбэк короткий ответ
             fallback_response = "Спасибо! 👍"
             await update.message.reply_text(fallback_response)
