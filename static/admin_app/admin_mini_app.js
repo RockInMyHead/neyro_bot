@@ -2403,11 +2403,11 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
             } else {
                 // Fallback - используем миксированный текст как есть
                 let fallbackDescription = sourceText.trim();
-                if (fallbackDescription.length > 200) {
-                    fallbackDescription = fallbackDescription.substring(0, 197) + '...';
-                }
+            if (fallbackDescription.length > 200) {
+                fallbackDescription = fallbackDescription.substring(0, 197) + '...';
+            }
                 descriptionElement.textContent = fallbackDescription || 'Нет данных для генерации описания';
-                descriptionElement.style.color = '#666';
+            descriptionElement.style.color = '#666';
                 descriptionElement.style.fontStyle = 'italic';
             }
         }
