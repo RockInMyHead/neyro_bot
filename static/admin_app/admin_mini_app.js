@@ -35,9 +35,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Проверка авторизации администратора
+async function checkAdminAuth() {
+    try {
+        const response = await fetch('/api/admin/check-auth');
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        return false;
+    }
+}
+
 // Загрузка начальных данных
 async function loadInitialData() {
     try {
+        // Проверяем авторизацию перед загрузкой данных
+        const isAuthenticated = await checkAdminAuth();
+        if (!isAuthenticated) {
+            console.log('❌ Администратор не авторизован, перенаправляем на страницу входа');
+            window.location.href = '/admin/login';
+            return;
+        }
+        
         await refreshMessages();
         initializePromptQueue();
         
@@ -1213,6 +1233,13 @@ window.cancelAllEdits = cancelAllEdits;
 // Загрузка статистики умных батчей
 async function loadSmartBatchStats() {
     try {
+        // Проверяем авторизацию перед загрузкой
+        const isAuthenticated = await checkAdminAuth();
+        if (!isAuthenticated) {
+            console.log('❌ Администратор не авторизован, пропускаем загрузку статистики');
+            return;
+        }
+        
         const response = await fetch('/api/admin/smart-batches/stats');
         const data = await response.json();
         
@@ -1322,6 +1349,13 @@ function updateSmartBatchStatsDisplay(batchStats, processorStats) {
 // Загрузка списка батчей
 async function loadSmartBatchList() {
     try {
+        // Проверяем авторизацию перед загрузкой
+        const isAuthenticated = await checkAdminAuth();
+        if (!isAuthenticated) {
+            console.log('❌ Администратор не авторизован, пропускаем загрузку списка батчей');
+            return;
+        }
+        
         const response = await fetch('/api/admin/smart-batches/list');
         const data = await response.json();
         
@@ -1445,6 +1479,13 @@ async function processNextBatch() {
 // Загрузка текущего миксированного текста
 async function loadCurrentMixedText() {
     try {
+        // Проверяем авторизацию перед загрузкой
+        const isAuthenticated = await checkAdminAuth();
+        if (!isAuthenticated) {
+            console.log('❌ Администратор не авторизован, пропускаем загрузку миксированного текста');
+            return;
+        }
+        
         const response = await fetch('/api/admin/smart-batches/current-mixed-text');
         const data = await response.json();
         
@@ -1479,6 +1520,13 @@ function startSmartBatchAutoUpdate() {
 // Загрузка сгенерированных изображений
 async function loadGeneratedImages() {
     try {
+        // Проверяем авторизацию перед загрузкой
+        const isAuthenticated = await checkAdminAuth();
+        if (!isAuthenticated) {
+            console.log('❌ Администратор не авторизован, пропускаем загрузку изображений');
+            return;
+        }
+        
         console.log('🖼️ Загружаем сгенерированные изображения...');
         const response = await fetch('/api/admin/smart-batches/images');
         const data = await response.json();
