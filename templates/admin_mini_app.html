@@ -122,7 +122,10 @@
                                 <label>Короткое описание:</label>
                                 <div class="content-display" id="generated-movie-description">Загрузка...</div>
                                 <textarea class="content-edit" id="generated-movie-description-edit" style="display: none;"></textarea>
-                                <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-description')">✏️</button>
+                                <div class="content-actions">
+                                    <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-description')">✏️</button>
+                                    <button class="btn-small regenerate-btn" onclick="regenerateFilmDescription()" title="Регенерировать описание">🔄</button>
+                                </div>
                             </div>
                             <div class="content-item">
                                 <label>Актёры/персонажи:</label>
@@ -170,6 +173,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=18"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=19"></script>
 </body>
 </html>

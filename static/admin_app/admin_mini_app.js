@@ -1809,11 +1809,63 @@ function selectPrompt(index) {
         ${prompt.description}
     `;
     
-    // Обновляем поля описания и актеров данными из промта
-    document.getElementById('generated-movie-description').textContent = prompt.description;
+    // Обновляем поле актеров
     document.getElementById('generated-movie-actors').textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
     
+    // Генерируем красивое описание фильма через LLM
+    generateFilmDescription(prompt.title, prompt.description);
+    
     togglePromptDropdown();
+}
+
+// Генерация красивого описания фильма
+async function generateFilmDescription(filmTitle, technicalPrompt) {
+    const descriptionElement = document.getElementById('generated-movie-description');
+    
+    // Показываем индикатор загрузки
+    descriptionElement.textContent = 'Генерация описания...';
+    descriptionElement.style.color = '#007bff';
+    
+    try {
+        const response = await fetch('/api/admin/generate-film-description', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                film_title: filmTitle,
+                technical_prompt: technicalPrompt
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            descriptionElement.textContent = data.description;
+            descriptionElement.style.color = '#333';
+            console.log('✅ Описание фильма сгенерировано:', data.description);
+        } else {
+            console.error('Ошибка генерации описания:', data.message);
+            descriptionElement.textContent = technicalPrompt; // Fallback
+            descriptionElement.style.color = '#666';
+        }
+    } catch (error) {
+        console.error('Ошибка генерации описания фильма:', error);
+        descriptionElement.textContent = technicalPrompt; // Fallback
+        descriptionElement.style.color = '#666';
+    }
+}
+
+// Регенерация описания фильма (ручная)
+async function regenerateFilmDescription() {
+    if (currentPromptIndex >= 0 && currentPromptIndex < concertPrompts.length) {
+        const prompt = concertPrompts[currentPromptIndex];
+        console.log('🔄 Регенерируем описание для:', prompt.title);
+        await generateFilmDescription(prompt.title, prompt.description);
+    } else {
+        console.error('❌ Нет выбранного промта для регенерации');
+        showNotification('Сначала выберите промт', 'warning');
+    }
 }
 
 // Обновление отображения промта
@@ -1998,3 +2050,4 @@ window.startSmartBatchAutoUpdate = startSmartBatchAutoUpdate;
 window.openImageModal = openImageModal;
 window.toggleStatsDropdown = toggleStatsDropdown;
 window.clearAllMessages = clearAllMessages;
+window.regenerateFilmDescription = regenerateFilmDescription;

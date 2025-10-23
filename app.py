@@ -852,6 +852,58 @@ def admin_update_base_prompt():
         logger.error(f"Ошибка обновления базового промта: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+@app.route('/api/admin/generate-film-description', methods=['POST'])
+def generate_film_description():
+    """Генерировать красивое описание фильма на основе технического промта"""
+    try:
+        data = request.get_json()
+        technical_prompt = data.get('technical_prompt', '')
+        film_title = data.get('film_title', '')
+        
+        if not technical_prompt:
+            return jsonify({"success": False, "message": "Технический промт не предоставлен"}), 400
+        
+        # Создаем промт для генерации красивого описания
+        description_prompt = f"""
+На основе этого технического описания кинематографического стиля создай красивое, атмосферное описание фильма для зрителей концерта:
+
+Техническое описание: {technical_prompt}
+
+Требования:
+- Напиши 2-3 абзаца красивого описания
+- Используй эмоциональные и образные слова
+- Опиши атмосферу, настроение и визуальные образы
+- Сделай текст понятным для обычных зрителей (не техническим)
+- Вдохновляй на воображение и эмоции
+- Используй русский язык
+
+Пример стиля:
+"Погружаясь в мрачную атмосферу Пиратов Карибского моря, зритель поднимается на борт деревянных кораблей, окутанных морской дымкой, и отправляется в эпическое плавание по волнам бурного приключения. Фильм затрагивает вопросы свободы, предательства и вечной борьбы за сокровища, погружая зрителя в сказочный мир пиратства и суровой морской судьбы."
+"""
+        
+        # Генерируем описание через OpenAI
+        from openai_client import get_openai_response
+        import asyncio
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            description = loop.run_until_complete(get_openai_response(description_prompt))
+            if not description:
+                description = technical_prompt  # Fallback
+            
+            return jsonify({
+                "success": True,
+                "description": description.strip()
+            })
+        finally:
+            loop.close()
+        
+    except Exception as e:
+        logger.error(f"Ошибка генерации описания фильма: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
 # Запуск сервера
 if __name__ == '__main__':
     # Debug: print registered routes

@@ -810,6 +810,28 @@ body {
     background: #545b62;
 }
 
+/* Контейнер для кнопок действий */
+.content-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+/* Кнопка регенерации */
+.regenerate-btn {
+    background: #28a745;
+    color: white;
+}
+
+.regenerate-btn:hover {
+    background: #1e7e34;
+}
+
+.regenerate-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
 /* Стили для редактирования промтов */
 .prompt-editor {
     margin-top: 25px;
