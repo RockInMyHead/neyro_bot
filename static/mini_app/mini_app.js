@@ -407,6 +407,12 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
             return;
         }
         
+        // Дополнительная проверка: если timestamp тот же, что и у последнего сообщения, пропускаем
+        if (timestamp && timestamp === lastMessageTimestamp) {
+            console.log('🔄 Сообщение с тем же timestamp уже обработано, пропускаем');
+            return;
+        }
+        
         // Проверяем существующие сообщения в DOM
         const existingMessages = chatMessages.querySelectorAll('.message.bot-message');
         for (let existingMsg of existingMessages) {
@@ -733,9 +739,18 @@ function handleChatKeyPress(event) {
 let lastMessageTimestamp = 0;
 let isInitialized = false;
 let isWaitingForAdminMessage = false; // Флаг ожидания сообщения от администратора
+let isProcessingMessage = false; // Флаг для предотвращения одновременной обработки сообщений
 
 // Функция для получения последнего сообщения от админа
 async function getLatestMessage() {
+    // Предотвращаем одновременную обработку сообщений
+    if (isProcessingMessage) {
+        console.log('⚠️ Сообщение уже обрабатывается, пропускаем запрос');
+        return;
+    }
+    
+    isProcessingMessage = true;
+    
     try {
         console.log('🔍 Запрашиваем последнее сообщение от админа...');
         const response = await fetch('/api/mini-app/latest-message');
@@ -865,6 +880,9 @@ async function getLatestMessage() {
         }
     } catch (error) {
         console.error('Ошибка получения последнего сообщения:', error);
+    } finally {
+        // Сбрасываем флаг обработки
+        isProcessingMessage = false;
     }
 }
 
