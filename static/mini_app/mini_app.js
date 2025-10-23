@@ -313,14 +313,18 @@ function enableChatInput() {
     if (chatInput) {
         chatInput.disabled = false;
         chatInput.placeholder = 'Напишите сообщение...';
-        chatInput.focus();
+        chatInput.style.opacity = '1';
+        chatInput.style.cursor = 'text';
+        // Не устанавливаем фокус автоматически, чтобы не мешать пользователю
     }
     
     if (sendBtn) {
         sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        sendBtn.style.cursor = 'pointer';
     }
     
-    console.log('Блок ввода сообщений включен');
+    console.log('✅ Поле ввода включено');
 }
 
 // Отключение блока ввода сообщений
@@ -331,13 +335,17 @@ function disableChatInput() {
     if (chatInput) {
         chatInput.disabled = true;
         chatInput.placeholder = '';
+        chatInput.style.opacity = '0.5';
+        chatInput.style.cursor = 'not-allowed';
     }
     
     if (sendBtn) {
         sendBtn.disabled = true;
+        sendBtn.style.opacity = '0.5';
+        sendBtn.style.cursor = 'not-allowed';
     }
     
-    console.log('Блок ввода сообщений отключен');
+    console.log('❌ Поле ввода отключено');
 }
 
 // Добавление сообщения в чат
@@ -406,6 +414,7 @@ async function sendChatMessage() {
     const sendBtn = document.querySelector('.chat-send-btn');
     
     // Отключаем блок ввода до получения ответа
+    console.log('🔒 Отключаем поле ввода перед отправкой сообщения');
     disableChatInput();
     
     // Existing logic to add user message and send to API
@@ -413,11 +422,13 @@ async function sendChatMessage() {
     
     if (!message) return;
     
+    console.log('📤 Отправляем сообщение пользователя:', message);
     addMessageToChat(message, true);
     chatInput.value = '';
     
     // Устанавливаем флаг ожидания сообщения от администратора
     isWaitingForAdminMessage = true;
+    console.log('⏳ Установлен флаг ожидания сообщения от администратора');
     
     // Показываем индикатор печати
     showTypingIndicator();
@@ -630,19 +641,23 @@ async function getLatestMessage() {
             
             // Проверяем, не получали ли мы уже это сообщение
             if (data.timestamp > lastMessageTimestamp) {
+                console.log('📨 Получено новое сообщение от администратора');
+                
                 // Добавляем сообщение в чат
                 addMessageToChat(data.message, false);
                 
                 // Сбрасываем флаг ожидания сообщения от администратора
                 isWaitingForAdminMessage = false;
+                console.log('🔄 Сброшен флаг ожидания сообщения от администратора');
                 
                 // Активируем блок ввода после получения сообщения от админа
+                console.log('🔓 Включаем поле ввода после сообщения от администратора');
                 enableChatInput();
                 
                 // Обновляем timestamp последнего сообщения
                 lastMessageTimestamp = data.timestamp;
                 
-                console.log('Получено новое сообщение от админа:', data.message);
+                console.log('✅ Сообщение от администратора обработано:', data.message.substring(0, 50) + '...');
             }
         }
     } catch (error) {
