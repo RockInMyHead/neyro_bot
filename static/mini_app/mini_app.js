@@ -520,6 +520,12 @@ async function sendChatMessage() {
     
     // Отправляем сообщение боту
     sendMessageToBot(message);
+    
+    // Принудительно проверяем новые сообщения через 3 секунды
+    setTimeout(() => {
+        console.log('🔍 Принудительная проверка новых сообщений после отправки пользователем');
+        getLatestMessage();
+    }, 3000);
 }
 
 // Показать индикатор печати
@@ -766,6 +772,7 @@ async function getLatestMessage() {
             if (data.timestamp > lastMessageTimestamp) {
                 console.log('📨 Получено новое сообщение от администратора');
                 console.log('📨 Содержимое сообщения:', data.message.substring(0, 100) + '...');
+                console.log('🔍 Новый timestamp:', data.timestamp, 'Предыдущий:', lastMessageTimestamp);
                 
                 // Добавляем сообщение в чат
                 addMessageToChat(data.message, false);
@@ -782,7 +789,7 @@ async function getLatestMessage() {
                 lastMessageTimestamp = data.timestamp;
                 
                 console.log('✅ Сообщение от администратора обработано:', data.message.substring(0, 50) + '...');
-            } else if (data.is_recent && data.timestamp === lastMessageTimestamp) {
+            } else if (data.timestamp === lastMessageTimestamp && data.is_recent) {
                 // Если сообщение недавнее, но timestamp тот же, проверяем дублирование
                 console.log('🔄 Обнаружено недавнее сообщение с тем же timestamp, проверяем дублирование...');
                 
@@ -814,8 +821,44 @@ async function getLatestMessage() {
                 } else {
                     console.log('🔍 Сообщение уже существует в чате, пропускаем дублирование');
                 }
+            } else if (data.timestamp === lastMessageTimestamp && !data.is_recent) {
+                // Сообщение с тем же timestamp, но не недавнее - пропускаем
+                console.log('🔍 Сообщение уже было получено ранее');
             } else {
-                console.log('🔍 Сообщение уже было получено ранее или timestamp не изменился');
+                // Если timestamp меньше или равен, но есть сообщение - проверяем, может быть это новое сообщение
+                console.log('🔍 Проверяем, может быть это новое сообщение с тем же timestamp');
+                console.log('🔍 Timestamp:', data.timestamp, 'Last:', lastMessageTimestamp, 'Is recent:', data.is_recent);
+                
+                // Если сообщение недавнее, но timestamp тот же - это может быть новое сообщение
+                if (data.is_recent) {
+                    console.log('📨 Обрабатываем недавнее сообщение с тем же timestamp');
+                    
+                    // Проверяем дублирование через DOM
+                    const chatMessages = document.getElementById('chat-messages');
+                    const existingMessages = chatMessages.querySelectorAll('.message.bot-message');
+                    let messageExists = false;
+                    
+                    for (let existingMsg of existingMessages) {
+                        const existingContent = existingMsg.querySelector('.message-content');
+                        if (existingContent) {
+                            const existingText = existingContent.textContent.trim();
+                            const newText = data.message.trim();
+                            
+                            if (existingText.substring(0, 50) === newText.substring(0, 50)) {
+                                messageExists = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!messageExists) {
+                        console.log('📨 Добавляем новое сообщение с тем же timestamp');
+                        addMessageToChat(data.message, false);
+                        enableChatInput();
+                    } else {
+                        console.log('🔍 Сообщение уже существует в чате');
+                    }
+                }
             }
         } else {
             console.log('❌ Нет сообщений от админа или ошибка в ответе');
@@ -827,8 +870,8 @@ async function getLatestMessage() {
 
 // Функция для периодической проверки новых сообщений
 function startMessagePolling() {
-    // Проверяем каждые 2 секунды для более быстрого отклика
-    setInterval(getLatestMessage, 2000);
+    // Проверяем каждую секунду для более быстрого отклика
+    setInterval(getLatestMessage, 1000);
 }
 
 // Инициализация чата
