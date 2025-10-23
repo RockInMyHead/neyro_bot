@@ -852,6 +852,18 @@ def get_latest_message():
         message_db.load_messages()
         admin_messages = [msg for msg in message_db.messages if msg.get('source') == 'admin']
         
+        # Автоматически очищаем старые админские сообщения (старше 5 минут)
+        current_time = time.time()
+        old_admin_messages = [msg for msg in admin_messages if current_time - msg.get('timestamp', 0) > 300]
+        
+        if old_admin_messages:
+            logger.info(f"🧹 Автоматически очищаем {len(old_admin_messages)} старых админских сообщений")
+            message_db.messages = [msg for msg in message_db.messages if not (msg.get('source') == 'admin' and current_time - msg.get('timestamp', 0) > 300)]
+            message_db.save_messages()
+            # Перезагружаем сообщения после очистки
+            message_db.load_messages()
+            admin_messages = [msg for msg in message_db.messages if msg.get('source') == 'admin']
+        
         logger.info(f"🔍 Поиск сообщений от админа: найдено {len(admin_messages)} сообщений")
         logger.info(f"🔍 Все сообщения в БД: {len(message_db.messages)}")
         
@@ -888,11 +900,31 @@ def get_latest_message():
         logger.error(f"Ошибка получения последнего сообщения: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+def clear_old_admin_messages():
+    """Очищает старые админские сообщения из БД"""
+    try:
+        message_db.load_messages()
+        admin_messages = [msg for msg in message_db.messages if msg.get('source') == 'admin']
+        
+        if len(admin_messages) > 0:
+            logger.info(f"🧹 Очищаем {len(admin_messages)} старых админских сообщений")
+            
+            # Удаляем все админские сообщения
+            message_db.messages = [msg for msg in message_db.messages if msg.get('source') != 'admin']
+            message_db.save_messages()
+            
+            logger.info("✅ Старые админские сообщения очищены")
+    except Exception as e:
+        logger.error(f"❌ Ошибка очистки старых админских сообщений: {e}")
+
 @app.route('/api/admin/send-concert-message', methods=['POST'])
 @require_admin_auth
 def admin_send_concert_message():
     """Отправляет концертное сообщение в чат"""
     try:
+        # Очищаем старые админские сообщения перед отправкой нового
+        clear_old_admin_messages()
+        
         data = request.get_json(silent=True) or {}
         logger.info(f"/api/admin/send-concert-message payload: {data}")
         
