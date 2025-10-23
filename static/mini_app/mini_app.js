@@ -569,6 +569,10 @@ async function sendMessageToBot(message) {
         // Fallback на локальную генерацию ответа
         const botResponse = generateBotResponse(message);
         addMessageToChat(botResponse, false);
+        
+        // НЕ сбрасываем флаг isWaitingForAdminMessage при ошибке
+        // Поле ввода должно оставаться отключенным до получения сообщения от администратора
+        console.log('⚠️ Ошибка отправки, но поле ввода остается отключенным');
     }
 }
 
