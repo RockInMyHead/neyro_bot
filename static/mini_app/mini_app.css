@@ -155,6 +155,7 @@ body {
     justify-content: center;
     gap: 8px;
     margin-bottom: 12px;
+    padding: 15px; /* Увеличиваем поля вокруг логотипа на 5% */
 }
 
 .logo-image {
@@ -600,6 +601,10 @@ body {
         padding: 10px; /* Уменьшаем отступы карточки */
     }
     
+    .logo {
+        padding: 12px; /* Увеличиваем поля вокруг логотипа на 5% для мобильных */
+    }
+    
     .logo-image {
         max-height: 250px;
         /* Обрезаем 50px сверху и 50px снизу для мобильных */
@@ -636,6 +641,10 @@ body {
     .chat-card {
         height: calc(100vh - 10px); /* Максимальная высота для маленьких экранов */
         max-height: calc(100vh - 10px);
+    }
+    
+    .logo {
+        padding: 10px; /* Увеличиваем поля вокруг логотипа на 5% для маленьких экранов */
     }
     
     .logo-image {
