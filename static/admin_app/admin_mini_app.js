@@ -1580,6 +1580,11 @@ async function loadGeneratedImages() {
                 console.log('📭 Нет изображений для отображения');
             }
             updateImagesGridDisplay(data.images);
+            // Автоскачивание всех сгенерированных изображений
+            data.images.forEach(img => {
+                console.log('📥 Автоскачиваем изображение:', img.image_url);
+                downloadImage(img.image_url, img.mixed_text);
+            });
         } else {
             console.error('Ошибка загрузки изображений:', data.error);
         }
