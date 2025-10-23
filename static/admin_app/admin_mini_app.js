@@ -2685,7 +2685,29 @@ async function generateCustomImage() {
             // Сохраняем URL для скачивания
             imageElement.dataset.downloadUrl = data.image_url;
             
-            showNotification('Изображение успешно сгенерировано!', 'success');
+            // Отображаем информацию о размере изображения в HTML
+            const imageInfoDiv = document.getElementById('image-info');
+            if (imageInfoDiv) {
+                let infoText = '';
+                if (data.image_size) {
+                    infoText += `📐 Размер: ${data.image_size}`;
+                }
+                if (data.processed) {
+                    infoText += ' | ✅ Обработано и сжато';
+                }
+                imageInfoDiv.textContent = infoText;
+            }
+            
+            // Отображаем информацию о размере изображения
+            let successMessage = 'Изображение успешно сгенерировано!';
+            if (data.image_size) {
+                successMessage += ` (${data.image_size})`;
+            }
+            if (data.processed) {
+                successMessage += ' [Обработано и сжато]';
+            }
+            
+            showNotification(successMessage, 'success');
         } else {
             showNotification(data.message || 'Ошибка генерации изображения', 'error');
         }

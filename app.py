@@ -207,10 +207,7 @@ def require_admin_auth(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-# Serve Mini App
-@app.route('/')
-def mini_app():
-    return render_template('mini_app.html')
+# Mini App removed - functionality moved to enhanced_bot.py
 
 # Admin Login Page
 @app.route('/admin/login')
