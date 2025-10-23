@@ -413,6 +413,12 @@ async function sendChatMessage() {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.querySelector('.chat-send-btn');
     
+    // Проверяем, не отключено ли уже поле ввода
+    if (chatInput && chatInput.disabled) {
+        console.log('⚠️ Поле ввода уже отключено, игнорируем отправку');
+        return;
+    }
+    
     // Отключаем блок ввода до получения ответа
     console.log('🔒 Отключаем поле ввода перед отправкой сообщения');
     disableChatInput();
@@ -420,7 +426,11 @@ async function sendChatMessage() {
     // Existing logic to add user message and send to API
     const message = chatInput.value.trim();
     
-    if (!message) return;
+    if (!message) {
+        // Если сообщение пустое, включаем поле ввода обратно
+        enableChatInput();
+        return;
+    }
     
     console.log('📤 Отправляем сообщение пользователя:', message);
     addMessageToChat(message, true);
@@ -463,9 +473,13 @@ function removeTypingIndicator() {
         typingIndicator.remove();
     }
     
-    // Включаем блок ввода только если не ждем сообщение от администратора
+    // НЕ включаем блок ввода, если ждем сообщение от администратора
+    // Поле ввода должно оставаться отключенным до получения нового сообщения от админа
     if (!isWaitingForAdminMessage) {
+        console.log('🔓 Включаем поле ввода после удаления индикатора печати');
         enableChatInput();
+    } else {
+        console.log('⏳ Поле ввода остается отключенным - ждем сообщение от администратора');
     }
 }
 
@@ -615,6 +629,13 @@ function generateBotResponse(userMessage) {
 function handleChatKeyPress(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
+        
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput && chatInput.disabled) {
+            console.log('⚠️ Поле ввода отключено, игнорируем нажатие Enter');
+            return;
+        }
+        
         sendChatMessage();
     }
 }
