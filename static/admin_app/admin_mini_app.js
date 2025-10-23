@@ -1807,18 +1807,46 @@ function closeDropdownOnOutsideClick(event) {
 
 // Выбор промта
 function selectPrompt(index) {
+    console.log('🎯 selectPrompt вызвана с индексом:', index);
     currentPromptIndex = index;
     const prompt = concertPrompts[index];
     
-    document.getElementById('current-prompt-title').textContent = prompt.title;
-    document.getElementById('prompt-text').innerHTML = `
-        <strong>${prompt.title}</strong><br>
-        <span style="color: #007bff; font-weight: 600;">⏱️ ${prompt.duration}</span><br><br>
-        ${prompt.description}
-    `;
+    console.log('📝 Выбранный промт:', prompt);
+    
+    const titleElement = document.getElementById('current-prompt-title');
+    const promptTextElement = document.getElementById('prompt-text');
+    
+    console.log('🔍 Элементы DOM:', {
+        titleElement: titleElement,
+        promptTextElement: promptTextElement
+    });
+    
+    if (titleElement) {
+        titleElement.textContent = prompt.title;
+        console.log('✅ Обновлено название фильма:', prompt.title);
+    } else {
+        console.error('❌ Элемент current-prompt-title не найден');
+    }
+    
+    if (promptTextElement) {
+        promptTextElement.innerHTML = `
+            <strong>${prompt.title}</strong><br>
+            <span style="color: #007bff; font-weight: 600;">⏱️ ${prompt.duration}</span><br><br>
+            ${prompt.description}
+        `;
+        console.log('✅ Обновлен предварительный просмотр');
+    } else {
+        console.error('❌ Элемент prompt-text не найден');
+    }
     
     // Обновляем поле актеров
-    document.getElementById('generated-movie-actors').textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
+    const actorsElement = document.getElementById('generated-movie-actors');
+    if (actorsElement) {
+        actorsElement.textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
+        console.log('✅ Обновлено поле актеров');
+    } else {
+        console.error('❌ Элемент generated-movie-actors не найден');
+    }
     
     // Генерируем красивое описание фильма через LLM
     generateFilmDescription(prompt.title, prompt.description);
