@@ -409,7 +409,13 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     
     // Плавная прокрутка к последнему сообщению
     setTimeout(() => {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: 'smooth'
+        });
+        
+        // Проверяем, нужно ли показать кнопку прокрутки
+        toggleScrollButton();
     }, 100);
     
     // Сохраняем в историю
@@ -806,13 +812,18 @@ function scrollToBottom() {
     const scrollBtn = document.getElementById('scroll-to-bottom-btn');
     
     if (chatMessages) {
+        // Плавная прокрутка к самому низу
+        chatMessages.scrollTo({
+            top: chatMessages.scrollHeight,
+            behavior: 'smooth'
+        });
+        
+        // Скрываем кнопку после прокрутки
         setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            // Скрываем кнопку после прокрутки
             if (scrollBtn) {
                 scrollBtn.classList.remove('show');
             }
-        }, 100);
+        }, 500);
     }
 }
 
@@ -822,12 +833,14 @@ function toggleScrollButton() {
     const scrollBtn = document.getElementById('scroll-to-bottom-btn');
     
     if (chatMessages && scrollBtn) {
-        const isAtBottom = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 10;
+        const isAtBottom = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 20;
         
         if (isAtBottom) {
             scrollBtn.classList.remove('show');
+            scrollBtn.style.display = 'none';
         } else {
             scrollBtn.classList.add('show');
+            scrollBtn.style.display = 'flex';
         }
     }
 }
