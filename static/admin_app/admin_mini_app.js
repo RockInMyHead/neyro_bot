@@ -1900,8 +1900,15 @@ function selectPrompt(index) {
     // Обновляем поле актеров
     const actorsElement = document.getElementById('generated-movie-actors');
     if (actorsElement) {
-        actorsElement.textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
-        console.log('✅ Обновлено поле актеров');
+        // Используем поле actors из промта, если оно есть
+        if (prompt.actors) {
+            actorsElement.textContent = prompt.actors;
+            console.log('✅ Обновлено поле актеров из промта:', prompt.actors);
+        } else {
+            // Fallback на общий вопрос, если поле actors отсутствует
+            actorsElement.textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
+            console.log('⚠️ Поле actors отсутствует, используется fallback');
+        }
     } else {
         console.error('❌ Элемент generated-movie-actors не найден');
     }
