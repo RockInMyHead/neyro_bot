@@ -46,6 +46,15 @@ async function loadInitialData() {
         
         // Инициализируем промты
         initializePrompts();
+        
+        // Дополнительная проверка через 1 секунду
+        setTimeout(() => {
+            if (concertPrompts.length > 0) {
+                console.log('🔄 Дополнительная проверка - обновляем название фильма');
+                selectPrompt(0);
+            }
+        }, 1000);
+        
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
     }
@@ -1771,6 +1780,18 @@ function initializePrompts() {
     console.log('🎬 Инициализация промтов...');
     console.log('📊 Количество промтов:', concertPrompts.length);
     
+    // Проверяем, что DOM готов
+    const titleElement = document.getElementById('current-prompt-title');
+    console.log('🔍 Проверка DOM элемента current-prompt-title:', titleElement);
+    
+    if (!titleElement) {
+        console.warn('⚠️ Элемент current-prompt-title не найден, повторяем через 500ms');
+        setTimeout(() => {
+            initializePrompts();
+        }, 500);
+        return;
+    }
+    
     loadPrompts();
     updatePromptDisplay();
     
@@ -1778,6 +1799,8 @@ function initializePrompts() {
     if (concertPrompts.length > 0) {
         selectPrompt(0);
         console.log('🎯 Выбран первый промт:', concertPrompts[0].title);
+    } else {
+        console.error('❌ Массив concertPrompts пуст');
     }
     
     console.log('✅ Промты инициализированы');
@@ -1880,6 +1903,19 @@ function closeDropdownOnOutsideClick(event) {
 // Выбор промта
 function selectPrompt(index) {
     console.log('🎯 selectPrompt вызвана с индексом:', index);
+    console.log('📊 Массив concertPrompts:', concertPrompts);
+    console.log('📊 Длина массива:', concertPrompts.length);
+    
+    if (!concertPrompts || concertPrompts.length === 0) {
+        console.error('❌ Массив concertPrompts пуст или не определен');
+        return;
+    }
+    
+    if (index < 0 || index >= concertPrompts.length) {
+        console.error('❌ Неверный индекс промта:', index);
+        return;
+    }
+    
     currentPromptIndex = index;
     const prompt = concertPrompts[index];
     
@@ -1890,7 +1926,9 @@ function selectPrompt(index) {
     
     console.log('🔍 Элементы DOM:', {
         titleElement: titleElement,
-        promptTextElement: promptTextElement
+        promptTextElement: promptTextElement,
+        titleElementExists: !!titleElement,
+        promptTextElementExists: !!promptTextElement
     });
     
     if (titleElement) {
@@ -1898,6 +1936,16 @@ function selectPrompt(index) {
         console.log('✅ Обновлено название фильма:', prompt.title);
     } else {
         console.error('❌ Элемент current-prompt-title не найден');
+        // Попробуем найти элемент снова через небольшую задержку
+        setTimeout(() => {
+            const retryElement = document.getElementById('current-prompt-title');
+            if (retryElement) {
+                retryElement.textContent = prompt.title;
+                console.log('✅ Обновлено название фильма (повторная попытка):', prompt.title);
+            } else {
+                console.error('❌ Элемент current-prompt-title все еще не найден');
+            }
+        }, 100);
     }
     
     if (promptTextElement) {
