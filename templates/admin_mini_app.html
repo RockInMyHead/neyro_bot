@@ -92,8 +92,15 @@
                     
                     <div class="prompt-preview" id="prompt-preview">
                         <h4>Предварительный просмотр:</h4>
-                        <div class="prompt-text" id="prompt-text">
-                            Выберите промт из списка выше
+                        <div class="prompt-preview-content">
+                            <div class="prompt-text" id="prompt-text">
+                                Выберите промт из списка выше
+                            </div>
+                            <div class="prompt-edit-controls">
+                                <button class="btn-small edit-btn" onclick="togglePromptEdit()" id="edit-prompt-btn">✏️ Редактировать</button>
+                                <button class="btn-small save-btn" onclick="savePromptEdit()" id="save-prompt-btn" style="display: none;">💾 Сохранить</button>
+                                <button class="btn-small cancel-btn" onclick="cancelPromptEdit()" id="cancel-prompt-btn" style="display: none;">❌ Отмена</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -183,6 +190,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=20"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=21"></script>
 </body>
 </html>

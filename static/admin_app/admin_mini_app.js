@@ -1691,6 +1691,8 @@ const concertPrompts = [
 // Переменные для управления промтами
 let currentPromptIndex = 0;
 let isDropdownOpen = false;
+let isEditingPrompt = false;
+let originalPromptText = '';
 
 // Инициализация промтов
 function initializePrompts() {
@@ -1816,6 +1818,156 @@ function selectPrompt(index) {
     generateFilmDescription(prompt.title, prompt.description);
     
     togglePromptDropdown();
+}
+
+// Переключение режима редактирования промта
+function togglePromptEdit() {
+    if (isEditingPrompt) {
+        cancelPromptEdit();
+        return;
+    }
+    
+    const promptText = document.getElementById('prompt-text');
+    const editBtn = document.getElementById('edit-prompt-btn');
+    const saveBtn = document.getElementById('save-prompt-btn');
+    const cancelBtn = document.getElementById('cancel-prompt-btn');
+    
+    if (!promptText || !editBtn || !saveBtn || !cancelBtn) {
+        console.error('❌ Элементы редактирования промта не найдены');
+        return;
+    }
+    
+    // Сохраняем оригинальный текст
+    originalPromptText = promptText.innerHTML;
+    
+    // Делаем текст редактируемым
+    promptText.contentEditable = true;
+    promptText.classList.add('editing');
+    
+    // Показываем/скрываем кнопки
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    
+    isEditingPrompt = true;
+    
+    // Фокус на тексте
+    promptText.focus();
+    
+    console.log('✏️ Режим редактирования промта включен');
+}
+
+// Сохранение изменений промта
+function savePromptEdit() {
+    const promptText = document.getElementById('prompt-text');
+    const editBtn = document.getElementById('edit-prompt-btn');
+    const saveBtn = document.getElementById('save-prompt-btn');
+    const cancelBtn = document.getElementById('cancel-prompt-btn');
+    
+    if (!promptText || !editBtn || !saveBtn || !cancelBtn) {
+        console.error('❌ Элементы редактирования промта не найдены');
+        return;
+    }
+    
+    // Получаем новый текст
+    const newText = promptText.innerHTML;
+    
+    // Проверяем, что текст изменился
+    if (newText === originalPromptText) {
+        console.log('📝 Текст не изменился, отменяем редактирование');
+        cancelPromptEdit();
+        return;
+    }
+    
+    // Обновляем промт в массиве
+    if (currentPromptIndex >= 0 && currentPromptIndex < concertPrompts.length) {
+        // Извлекаем только описание (без заголовка и времени)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newText;
+        
+        // Находим текст после времени
+        const timeElement = tempDiv.querySelector('span[style*="color: #007bff"]');
+        let description = '';
+        
+        if (timeElement) {
+            // Берем текст после элемента времени
+            const timeParent = timeElement.parentNode;
+            const textNodes = [];
+            let foundTime = false;
+            
+            for (let node of timeParent.childNodes) {
+                if (node === timeElement) {
+                    foundTime = true;
+                    continue;
+                }
+                if (foundTime && node.nodeType === Node.TEXT_NODE) {
+                    textNodes.push(node.textContent);
+                } else if (foundTime && node.nodeType === Node.ELEMENT_NODE) {
+                    textNodes.push(node.textContent);
+                }
+            }
+            
+            description = textNodes.join('').trim();
+        } else {
+            // Если не нашли элемент времени, берем весь текст
+            description = tempDiv.textContent.trim();
+        }
+        
+        // Обновляем описание промта
+        concertPrompts[currentPromptIndex].description = description;
+        
+        console.log('💾 Промт сохранен:', {
+            title: concertPrompts[currentPromptIndex].title,
+            description: description.substring(0, 100) + '...'
+        });
+        
+        // Показываем уведомление
+        showNotification('Промт успешно сохранен!', 'success');
+    }
+    
+    // Выходим из режима редактирования
+    exitEditMode();
+}
+
+// Отмена редактирования промта
+function cancelPromptEdit() {
+    const promptText = document.getElementById('prompt-text');
+    const editBtn = document.getElementById('edit-prompt-btn');
+    const saveBtn = document.getElementById('save-prompt-btn');
+    const cancelBtn = document.getElementById('cancel-prompt-btn');
+    
+    if (!promptText || !editBtn || !saveBtn || !cancelBtn) {
+        console.error('❌ Элементы редактирования промта не найдены');
+        return;
+    }
+    
+    // Восстанавливаем оригинальный текст
+    promptText.innerHTML = originalPromptText;
+    
+    // Выходим из режима редактирования
+    exitEditMode();
+    
+    console.log('❌ Редактирование промта отменено');
+}
+
+// Выход из режима редактирования
+function exitEditMode() {
+    const promptText = document.getElementById('prompt-text');
+    const editBtn = document.getElementById('edit-prompt-btn');
+    const saveBtn = document.getElementById('save-prompt-btn');
+    const cancelBtn = document.getElementById('cancel-prompt-btn');
+    
+    if (promptText) {
+        promptText.contentEditable = false;
+        promptText.classList.remove('editing');
+    }
+    
+    if (editBtn) editBtn.style.display = 'inline-block';
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    
+    isEditingPrompt = false;
+    originalPromptText = '';
 }
 
 // Генерация красивого описания фильма
@@ -2051,6 +2203,9 @@ window.openImageModal = openImageModal;
 window.toggleStatsDropdown = toggleStatsDropdown;
 window.clearAllMessages = clearAllMessages;
 window.regenerateFilmDescription = regenerateFilmDescription;
+window.togglePromptEdit = togglePromptEdit;
+window.savePromptEdit = savePromptEdit;
+window.cancelPromptEdit = cancelPromptEdit;
 
 // Функция выхода из системы
 async function logoutAdmin() {

@@ -875,6 +875,53 @@ body {
     cursor: not-allowed;
 }
 
+/* Предварительный просмотр промта */
+.prompt-preview-content {
+    position: relative;
+}
+
+.prompt-text {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    min-height: 100px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.prompt-text.editing {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-primary);
+}
+
+.prompt-edit-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.save-btn {
+    background: #28a745;
+    color: white;
+}
+
+.save-btn:hover {
+    background: #1e7e34;
+}
+
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #545b62;
+}
+
 /* Стили для редактирования промтов */
 .prompt-editor {
     margin-top: 25px;
