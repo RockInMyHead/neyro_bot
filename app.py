@@ -862,17 +862,27 @@ def get_latest_message():
         if admin_messages:
             latest_message = max(admin_messages, key=lambda x: x.get('timestamp', 0))
             logger.info(f"✅ Найдено последнее сообщение от админа: {latest_message.get('message', '')[:50]}...")
+            
+            # Проверяем, не было ли недавно отправлено новое сообщение
+            global last_admin_message_time
+            message_time = latest_message.get('timestamp', 0)
+            is_recent = (time.time() - message_time) < 30  # Сообщение отправлено менее 30 секунд назад
+            
             return jsonify({
                 "success": True,
                 "message": latest_message.get('message', ''),
-                "timestamp": latest_message.get('timestamp', 0)
+                "timestamp": latest_message.get('timestamp', 0),
+                "is_recent": is_recent,
+                "last_admin_time": last_admin_message_time
             })
         else:
             logger.info("❌ Сообщения от админа не найдены")
             return jsonify({
                 "success": True,
                 "message": "",
-                "timestamp": 0
+                "timestamp": 0,
+                "is_recent": False,
+                "last_admin_time": last_admin_message_time
             })
     except Exception as e:
         logger.error(f"Ошибка получения последнего сообщения: {e}")
@@ -989,6 +999,12 @@ P.S. Ответы анонимны."""
                 source='admin'
             )
             logger.info("✅ Админское сообщение успешно сохранено в БД")
+            
+            # Устанавливаем флаг для немедленной доставки
+            global last_admin_message_time
+            last_admin_message_time = time.time()
+            logger.info("🚀 Установлен флаг немедленной доставки сообщения")
+            
         except Exception as e:
             logger.error(f"❌ Не удалось сохранить админское сообщение: {e}")
         
@@ -1006,6 +1022,9 @@ P.S. Ответы анонимны."""
 
 # Глобальная переменная для отслеживания статуса очистки чата
 chat_clear_timestamp = None
+
+# Глобальная переменная для отслеживания времени последнего админского сообщения
+last_admin_message_time = 0
 
 @app.route('/api/check-chat-clear-status', methods=['GET'])
 def check_chat_clear_status():
