@@ -2867,3 +2867,6 @@ window.loadBasePrompt = loadBasePrompt;
 window.previewFullPrompt = previewFullPrompt;
 window.generateCustomImage = generateCustomImage;
 window.downloadGeneratedImage = downloadGeneratedImage;
+
+// Админ Mini App JavaScript
+const downloadedImageUrls = new Set();
