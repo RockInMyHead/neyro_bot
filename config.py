@@ -1,8 +1,8 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Загружаем переменные окружения
-load_dotenv()
+# Загружаем переменные окружения из .env (если файл находится не в текущей директории)
+load_dotenv(find_dotenv())
 
 # Токен бота
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8394487624:AAEUTsqaRtXsCBW2B3mqeu8HaC1zpE2ocow")
