@@ -391,7 +391,14 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     // Проверяем, есть ли уже такое сообщение в чате (только для бот-сообщений)
     if (!isUser) {
         // Создаем хеш сообщения для более надежной проверки
-        const messageHash = btoa(message.trim()).substring(0, 20);
+        // Используем encodeURIComponent для безопасного кодирования Unicode
+        let messageHash;
+        try {
+            messageHash = btoa(encodeURIComponent(message.trim())).substring(0, 20);
+        } catch (error) {
+            // Fallback: используем простую строку для хеширования
+            messageHash = message.trim().substring(0, 20).replace(/[^a-zA-Z0-9]/g, '');
+        }
         
         // Проверяем, не добавляли ли мы это сообщение недавно
         if (lastAddedMessageHash === messageHash) {
