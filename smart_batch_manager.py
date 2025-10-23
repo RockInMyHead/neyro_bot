@@ -47,13 +47,120 @@ class SmartBatch:
         return len(self.messages)
 
 class SmartBatchManager:
-    def __init__(self):
+    def __init__(self, data_file='smart_batch_data.json'):
+        self.data_file = data_file
         self.messages: List[Message] = []
         self.batches: List[SmartBatch] = []
         self.current_batch_index = 0
         self.is_processing = False
         self.processed_message_ids: set = set()  # NEW: Отслеживание обработанных сообщений
+        
+        # Загружаем данные из файла при инициализации
+        self._load_from_file()
+        
         logger.info("🚀 SmartBatchManager инициализирован")
+    
+    def _save_to_file(self):
+        """Сохранить данные в файл"""
+        try:
+            import json
+            data = {
+                'messages': [
+                    {
+                        'id': msg.id,
+                        'user_id': msg.user_id,
+                        'username': msg.username,
+                        'first_name': msg.first_name,
+                        'content': msg.content,
+                        'timestamp': msg.timestamp
+                    }
+                    for msg in self.messages
+                ],
+                'batches': [
+                    {
+                        'id': batch.id,
+                        'messages': [
+                            {
+                                'id': msg.id,
+                                'user_id': msg.user_id,
+                                'username': msg.username,
+                                'first_name': msg.first_name,
+                                'content': msg.content,
+                                'timestamp': msg.timestamp
+                            }
+                            for msg in batch.messages
+                        ],
+                        'status': batch.status.value,
+                        'created_at': batch.created_at,
+                        'mixed_text': batch.mixed_text,
+                        'generated_images': batch.generated_images
+                    }
+                    for batch in self.batches
+                ],
+                'processed_message_ids': list(self.processed_message_ids)
+            }
+            
+            with open(self.data_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка сохранения данных: {e}")
+    
+    def _load_from_file(self):
+        """Загрузить данные из файла"""
+        try:
+            import json
+            import os
+            
+            if not os.path.exists(self.data_file):
+                return
+            
+            with open(self.data_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Загружаем сообщения
+            self.messages = [
+                Message(
+                    id=msg['id'],
+                    user_id=msg['user_id'],
+                    username=msg['username'],
+                    first_name=msg['first_name'],
+                    content=msg['content'],
+                    timestamp=msg['timestamp']
+                )
+                for msg in data.get('messages', [])
+            ]
+            
+            # Загружаем батчи
+            self.batches = [
+                SmartBatch(
+                    id=batch['id'],
+                    messages=[
+                        Message(
+                            id=msg['id'],
+                            user_id=msg['user_id'],
+                            username=msg['username'],
+                            first_name=msg['first_name'],
+                            content=msg['content'],
+                            timestamp=msg['timestamp']
+                        )
+                        for msg in batch['messages']
+                    ],
+                    status=BatchStatus(batch['status']),
+                    created_at=batch['created_at'],
+                    mixed_text=batch.get('mixed_text'),
+                    generated_images=batch.get('generated_images')
+                )
+                for batch in data.get('batches', [])
+            ]
+            
+            # Загружаем обработанные ID
+            self.processed_message_ids = set(data.get('processed_message_ids', []))
+            
+            logger.info(f"📂 Загружено из файла: {len(self.messages)} сообщений, {len(self.batches)} батчей")
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка загрузки данных: {e}")
 
     def add_message(self, user_id: int, username: str, first_name: str, content: str) -> str:
         """Добавить новое сообщение"""
@@ -73,6 +180,9 @@ class SmartBatchManager:
 
         self.messages.append(message)
         logger.info(f"✅ Сообщение добавлено: {message.id} от {first_name} ({len(self.messages)} всего)")
+        
+        # Сохраняем данные в файл
+        self._save_to_file()
 
         return message.id
 
@@ -143,6 +253,9 @@ class SmartBatchManager:
         logger.info(f"🗑️ Очищено {total_messages} обработанных сообщений из очереди")
         logger.info(f"📝 Всего отслеживается {len(self.processed_message_ids)} обработанных сообщений")
 
+        # Сохраняем данные в файл после создания батчей
+        self._save_to_file()
+
         logger.info(f"🎉 Создано {len(created_batches)} батчей для обработки")
         return created_batches
 
@@ -168,6 +281,9 @@ class SmartBatchManager:
                         setattr(batch, key, value)
                 
                 logger.info(f"📝 Батч {batch_id} обновлен: {status.value}")
+                
+                # Сохраняем данные в файл после обновления
+                self._save_to_file()
                 break
 
     def get_statistics(self) -> Dict:
