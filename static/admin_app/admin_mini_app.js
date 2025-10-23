@@ -2281,18 +2281,22 @@ async function generateFilmDescriptionFromTitle(filmTitle) {
         if (data.success) {
             let description = data.description.trim();
             
-            // Обрезаем до 250 символов если нужно
-            if (description.length > 250) {
+            // Проверяем, что описание не слишком длинное и завершено
+            // Обрезаем только если действительно превышает разумный лимит
+            if (description.length > 300) {
+                // Ищем последнюю точку, восклицательный или вопросительный знак
                 const lastSentenceEnd = Math.max(
                     description.lastIndexOf('.'),
                     description.lastIndexOf('!'),
                     description.lastIndexOf('?')
                 );
                 
-                if (lastSentenceEnd > 50) {
+                // Обрезаем по последнему завершенному предложению только если оно есть
+                if (lastSentenceEnd > 100) {
                     description = description.substring(0, lastSentenceEnd + 1);
                 } else {
-                    description = description.substring(0, 247) + '...';
+                    // Если нет завершенных предложений в разумном месте, обрезаем по словам
+                    description = description.substring(0, 297) + '...';
                 }
             }
             
@@ -2353,8 +2357,9 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         if (data.success) {
             let description = data.description.trim();
             
-            // Проверяем, не обрывается ли описание на середине предложения
-            if (description.length > 200) {
+            // Проверяем, что описание не слишком длинное
+            // Обрезаем только если действительно превышает разумный лимит
+            if (description.length > 300) {
                 // Ищем последнюю точку, восклицательный или вопросительный знак
                 const lastSentenceEnd = Math.max(
                     description.lastIndexOf('.'),
@@ -2362,12 +2367,12 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
                     description.lastIndexOf('?')
                 );
                 
-                if (lastSentenceEnd > 50) {
-                    // Обрезаем по последнему завершенному предложению
+                // Обрезаем по последнему завершенному предложению только если оно есть
+                if (lastSentenceEnd > 100) {
                     description = description.substring(0, lastSentenceEnd + 1);
                 } else {
-                    // Если нет завершенных предложений, обрезаем аккуратно
-                    description = description.substring(0, 197) + '...';
+                    // Если нет завершенных предложений в разумном месте, обрезаем по словам
+                    description = description.substring(0, 297) + '...';
                 }
             }
             
