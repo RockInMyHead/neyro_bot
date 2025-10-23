@@ -101,7 +101,8 @@ class SequentialBatchProcessor:
             # Обновляем статистику
             self._update_stats(batch, success=True)
             
-            logger.info(f"🎉 Батч {batch.id[:8]} успешно обработан за {batch.processing_time:.2f}s")
+            processing_time = batch.processing_time or 0.0
+            logger.info(f"🎉 Батч {batch.id[:8]} успешно обработан за {processing_time:.2f}s")
             return True
             
         except Exception as e:
@@ -178,6 +179,11 @@ class SequentialBatchProcessor:
         try:
             mixed_text = await get_openai_response(prompt)
             
+            # Проверяем, что ответ не None
+            if mixed_text is None:
+                logger.warning("⚠️ get_openai_response вернул None, используем fallback")
+                raise Exception("OpenAI response is None")
+            
             # Принудительно обрезаем до максимальной длины
             if len(mixed_text) > self.MAX_MIXED_TEXT_LENGTH:
                 mixed_text = mixed_text[:self.MAX_MIXED_TEXT_LENGTH - 3] + "..."
@@ -250,6 +256,11 @@ class SequentialBatchProcessor:
         Returns:
             str: Полный промпт для генерации
         """
+        # Проверяем, что mixed_text не None
+        if mixed_text is None:
+            logger.warning("⚠️ mixed_text is None, using fallback")
+            mixed_text = "морской пейзаж, приключения, тайна"
+        
         # Художественный стиль (из оригинального проекта)
         style_addition = (
             " Мрачный кинематографичный реализм во вселенной Пиратов карибского моря; "
