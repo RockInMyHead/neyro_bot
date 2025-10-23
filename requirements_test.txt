@@ -1,0 +1,11 @@
+# Requirements for load testing
+aiohttp>=3.8.0
+asyncio
+statistics
+threading
+time
+json
+random
+datetime
+sys
+os
