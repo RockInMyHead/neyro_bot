@@ -378,8 +378,12 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
         // Используем улучшенную функцию очистки
         clearLocalChat();
         
-        // Показываем уведомление
-        showNotification('🔄 История чата была очищена администратором');
+        // Показываем уведомление только если оно еще не было показано
+        if (!clearNotificationShown) {
+            showNotification('🔄 История чата была очищена администратором');
+            clearNotificationShown = true;
+            sessionStorage.setItem('clear_notification_shown', 'true');
+        }
         
         // Обновляем страницу через 2 секунды
         setTimeout(() => {
@@ -901,6 +905,9 @@ function initChat() {
         // Изначально отключаем блок ввода до первого ответа от бота
         disableChatInput();
         
+        // Сбрасываем флаг уведомления при новой сессии
+        resetClearNotificationFlag();
+        
         // Сначала проверяем статус очистки чата
         initClearCheck();
         
@@ -942,7 +949,7 @@ function scrollToBottom() {
             behavior: 'smooth'
         });
         
-        // Скрываем кнопку после прокрутки
+            // Скрываем кнопку после прокрутки
         setTimeout(() => {
             if (scrollBtn) {
                 scrollBtn.classList.remove('show');
@@ -979,9 +986,27 @@ function initScrollHandler() {
 
 // Проверка статуса очистки чата
 let lastClearCheck = 0;
+let clearNotificationShown = false; // Флаг для отслеживания показанного уведомления
+
+// Функция для сброса флага уведомления
+function resetClearNotificationFlag() {
+    // Сбрасываем флаг только если это новая сессия (нет данных в sessionStorage)
+    const notificationShown = sessionStorage.getItem('clear_notification_shown');
+    if (!notificationShown) {
+        clearNotificationShown = false;
+        console.log('🔄 Сброшен флаг уведомления об очистке для новой сессии');
+    }
+}
 
 // Инициализация lastClearCheck при загрузке страницы
 function initClearCheck() {
+    // Проверяем, было ли уже показано уведомление в этой сессии
+    const notificationShown = sessionStorage.getItem('clear_notification_shown');
+    if (notificationShown === 'true') {
+        console.log('🔍 Уведомление об очистке уже было показано в этой сессии');
+        return;
+    }
+    
     // Получаем текущий timestamp при загрузке страницы
     fetch('/api/check-chat-clear-status')
         .then(response => response.json())
@@ -996,12 +1021,16 @@ function initClearCheck() {
                 const now = Date.now();
                 const tenMinutesAgo = now - (10 * 60 * 1000);
                 
-                if (data.clear_timestamp > tenMinutesAgo) {
+                if (data.clear_timestamp > tenMinutesAgo && !clearNotificationShown) {
                     console.log('🔄 Обнаружена недавняя очистка чата, принудительно очищаем локальный чат');
                     clearLocalChat();
                     
-                    // Показываем уведомление пользователю
+                    // Показываем уведомление пользователю только один раз
                     showNotification('🔄 История чата была очищена администратором');
+                    
+                    // Отмечаем, что уведомление было показано
+                    clearNotificationShown = true;
+                    sessionStorage.setItem('clear_notification_shown', 'true');
                 }
             }
         })
@@ -1049,15 +1078,19 @@ async function checkChatClearStatus() {
         
         if (data.success && data.chat_cleared && data.clear_timestamp) {
             // Проверяем, что это новая очистка (timestamp больше предыдущего)
-            if (data.clear_timestamp > lastClearCheck) {
+            if (data.clear_timestamp > lastClearCheck && !clearNotificationShown) {
                 console.log('🔄 Обнаружена новая очистка чата администратором');
                 lastClearCheck = data.clear_timestamp;
                 
                 // Очищаем локальный чат
                 clearLocalChat();
                 
-                // Показываем уведомление
+                // Показываем уведомление только один раз
                 showNotification('🔄 История чата была очищена администратором');
+                
+                // Отмечаем, что уведомление было показано
+                clearNotificationShown = true;
+                sessionStorage.setItem('clear_notification_shown', 'true');
                 
                 // Не перезагружаем страницу сразу, даем пользователю время прочитать уведомление
                 setTimeout(() => {
