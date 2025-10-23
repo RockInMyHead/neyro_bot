@@ -137,8 +137,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 10vh); /* Максимальная высота экрана с отступами 5% сверху и снизу */
-    max-height: calc(100vh - 10vh); /* Ограничиваем максимальную высоту */
+    height: calc(100vh - 5vh); /* Максимальная высота экрана с отступами 2.5% сверху и снизу */
+    max-height: calc(100vh - 5vh); /* Ограничиваем максимальную высоту */
 }
 
 /* Header */
@@ -258,8 +258,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 10vh); /* Максимальная высота экрана с отступами 5% сверху и снизу */
-    max-height: calc(100vh - 10vh); /* Ограничиваем максимальную высоту */
+    height: calc(100vh - 5vh); /* Максимальная высота экрана с отступами 2.5% сверху и снизу */
+    max-height: calc(100vh - 5vh); /* Ограничиваем максимальную высоту */
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: rgba(10, 10, 10, 0.5);
@@ -614,13 +614,13 @@ body {
     .chat-container {
         flex: 1;
         min-height: 0;
-        height: calc(100vh - 10vh); /* Максимальная высота для мобильных с отступами 5% */
-        max-height: calc(100vh - 10vh);
+        height: calc(100vh - 5vh); /* Максимальная высота для мобильных с отступами 2.5% */
+        max-height: calc(100vh - 5vh);
     }
     
     .chat-card {
-        height: calc(100vh - 10vh); /* Максимальная высота для мобильных с отступами 5% */
-        max-height: calc(100vh - 10vh);
+        height: calc(100vh - 5vh); /* Максимальная высота для мобильных с отступами 2.5% */
+        max-height: calc(100vh - 5vh);
     }
     
     .message-bubble {
@@ -634,13 +634,13 @@ body {
     }
     
     .chat-container {
-        height: calc(100vh - 10vh); /* Максимальная высота для маленьких экранов с отступами 5% */
-        max-height: calc(100vh - 10vh);
+        height: calc(100vh - 5vh); /* Максимальная высота для маленьких экранов с отступами 2.5% */
+        max-height: calc(100vh - 5vh);
     }
     
     .chat-card {
-        height: calc(100vh - 10vh); /* Максимальная высота для маленьких экранов с отступами 5% */
-        max-height: calc(100vh - 10vh);
+        height: calc(100vh - 5vh); /* Максимальная высота для маленьких экранов с отступами 2.5% */
+        max-height: calc(100vh - 5vh);
     }
     
     .logo {
