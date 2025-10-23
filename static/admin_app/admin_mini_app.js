@@ -1924,6 +1924,15 @@ function selectPrompt(index) {
         }, 100);
     }
     
+    // Обновляем заголовок dropdown
+    const dropdownTitleElement = document.getElementById('current-prompt-dropdown-title');
+    if (dropdownTitleElement) {
+        dropdownTitleElement.textContent = prompt.title;
+        console.log('✅ Обновлен заголовок dropdown:', prompt.title);
+    } else {
+        console.error('❌ Элемент current-prompt-dropdown-title не найден');
+    }
+    
     if (promptTextElement) {
         promptTextElement.innerHTML = `
             <strong>${prompt.title}</strong><br>
@@ -2074,6 +2083,13 @@ function savePromptEdit() {
         if (titleElement) {
             titleElement.textContent = concertPrompts[currentPromptIndex].title;
             console.log('✅ Обновлено название фильма после сохранения:', concertPrompts[currentPromptIndex].title);
+        }
+        
+        // Обновляем заголовок dropdown
+        const dropdownTitleElement = document.getElementById('current-prompt-dropdown-title');
+        if (dropdownTitleElement) {
+            dropdownTitleElement.textContent = concertPrompts[currentPromptIndex].title;
+            console.log('✅ Обновлен заголовок dropdown после сохранения:', concertPrompts[currentPromptIndex].title);
         }
         
         // Обновляем поле актеров
