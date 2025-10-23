@@ -137,8 +137,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 40px); /* Максимальная высота экрана с минимальными отступами */
-    max-height: calc(100vh - 40px); /* Ограничиваем максимальную высоту */
+    height: calc(100vh - 10vh); /* Максимальная высота экрана с отступами 5% сверху и снизу */
+    max-height: calc(100vh - 10vh); /* Ограничиваем максимальную высоту */
 }
 
 /* Header */
@@ -258,8 +258,8 @@ body {
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    height: calc(100vh - 80px); /* Максимальная высота экрана с минимальными отступами */
-    max-height: calc(100vh - 80px); /* Ограничиваем максимальную высоту */
+    height: calc(100vh - 10vh); /* Максимальная высота экрана с отступами 5% сверху и снизу */
+    max-height: calc(100vh - 10vh); /* Ограничиваем максимальную высоту */
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: rgba(10, 10, 10, 0.5);
@@ -614,13 +614,13 @@ body {
     .chat-container {
         flex: 1;
         min-height: 0;
-        height: calc(100vh - 60px); /* Максимальная высота для мобильных */
-        max-height: calc(100vh - 60px);
+        height: calc(100vh - 10vh); /* Максимальная высота для мобильных с отступами 5% */
+        max-height: calc(100vh - 10vh);
     }
     
     .chat-card {
-        height: calc(100vh - 20px); /* Максимальная высота для мобильных */
-        max-height: calc(100vh - 20px);
+        height: calc(100vh - 10vh); /* Максимальная высота для мобильных с отступами 5% */
+        max-height: calc(100vh - 10vh);
     }
     
     .message-bubble {
@@ -634,13 +634,13 @@ body {
     }
     
     .chat-container {
-        height: calc(100vh - 40px); /* Максимальная высота для маленьких экранов */
-        max-height: calc(100vh - 40px);
+        height: calc(100vh - 10vh); /* Максимальная высота для маленьких экранов с отступами 5% */
+        max-height: calc(100vh - 10vh);
     }
     
     .chat-card {
-        height: calc(100vh - 10px); /* Максимальная высота для маленьких экранов */
-        max-height: calc(100vh - 10px);
+        height: calc(100vh - 10vh); /* Максимальная высота для маленьких экранов с отступами 5% */
+        max-height: calc(100vh - 10vh);
     }
     
     .logo {
