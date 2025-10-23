@@ -1795,6 +1795,10 @@ function selectPrompt(index) {
         ${prompt.description}
     `;
     
+    // Обновляем поля описания и актеров данными из промта
+    document.getElementById('generated-movie-description').textContent = prompt.description;
+    document.getElementById('generated-movie-actors').textContent = `Какие образы и пейзажи возникают у вас в сознании, когда вы думаете об этом кинематографическом стиле?`;
+    
     togglePromptDropdown();
 }
 
