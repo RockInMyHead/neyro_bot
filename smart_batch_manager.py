@@ -167,6 +167,10 @@ class SmartBatchManager:
             
         except Exception as e:
             logger.error(f"❌ Ошибка загрузки данных: {e}")
+    
+    def reload(self):
+        """Перезагрузить данные из файла (для синхронизации между процессами)"""
+        self._load_from_file()
 
     def add_message(self, user_id: int, username: str, first_name: str, content: str) -> str:
         """Добавить новое сообщение"""

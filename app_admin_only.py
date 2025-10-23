@@ -102,6 +102,9 @@ def auto_generation_worker():
     
     while True:
         try:
+            # Перезагружаем данные из файла (синхронизация с ботом)
+            smart_batch_manager.reload()
+            
             # Сначала создаем батчи из накопленных сообщений
             created_batches = smart_batch_manager.create_batches()
             if created_batches:
