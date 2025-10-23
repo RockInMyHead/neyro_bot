@@ -2074,8 +2074,9 @@ function selectPrompt(index) {
         console.error('❌ Элемент generated-movie-actors не найден');
     }
     
-    // Генерируем красивое описание фильма через LLM
-    generateFilmDescription(prompt.title, prompt.description);
+    // Генерируем описание фильма автоматически на основе названия
+    console.log('🎬 Автоматическая генерация описания фильма на основе названия:', prompt.title);
+    generateFilmDescriptionFromTitle(prompt.title);
 }
 
 // Переключение режима редактирования промта
@@ -2206,8 +2207,8 @@ function savePromptEdit() {
             console.log('✅ Обновлено поле актеров после сохранения');
         }
         
-        // Генерируем новое описание фильма через LLM
-        generateFilmDescription(concertPrompts[currentPromptIndex].title, concertPrompts[currentPromptIndex].description);
+        // НЕ генерируем описание автоматически после сохранения промта
+        console.log('ℹ️ Описание фильма не генерируется автоматически после сохранения - используйте кнопку "Регенерировать"');
     }
     
     // Выходим из режима редактирования
@@ -2255,7 +2256,65 @@ function exitEditMode() {
     originalPromptText = '';
 }
 
-// Генерация красивого описания фильма
+// Генерация описания фильма на основе его названия (для автоматического заполнения)
+async function generateFilmDescriptionFromTitle(filmTitle) {
+    const descriptionElement = document.getElementById('generated-movie-description');
+    
+    // Показываем индикатор загрузки
+    descriptionElement.textContent = 'Генерация описания фильма...';
+    descriptionElement.style.color = '#007bff';
+    descriptionElement.style.fontStyle = 'italic';
+    
+    try {
+        const response = await fetch('/api/admin/generate-film-info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                film_title: filmTitle
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            let description = data.description.trim();
+            
+            // Обрезаем до 250 символов если нужно
+            if (description.length > 250) {
+                const lastSentenceEnd = Math.max(
+                    description.lastIndexOf('.'),
+                    description.lastIndexOf('!'),
+                    description.lastIndexOf('?')
+                );
+                
+                if (lastSentenceEnd > 50) {
+                    description = description.substring(0, lastSentenceEnd + 1);
+                } else {
+                    description = description.substring(0, 247) + '...';
+                }
+            }
+            
+            descriptionElement.textContent = description;
+            descriptionElement.style.color = '#333';
+            descriptionElement.style.fontStyle = 'normal';
+            console.log('✅ Описание фильма сгенерировано на основе названия:', description);
+        } else {
+            console.error('Ошибка генерации описания:', data.error);
+            descriptionElement.textContent = `Фильм "${filmTitle}" - описание будет добавлено позже`;
+            descriptionElement.style.color = '#666';
+            descriptionElement.style.fontStyle = 'italic';
+        }
+    } catch (error) {
+        console.error('Ошибка генерации описания фильма:', error);
+        descriptionElement.textContent = `Фильм "${filmTitle}" - описание будет добавлено позже`;
+        descriptionElement.style.color = '#666';
+        descriptionElement.style.fontStyle = 'italic';
+    }
+}
+
+// Генерация красивого описания фильма на основе миксированного текста пользователей
 async function generateFilmDescription(filmTitle, technicalPrompt) {
     const descriptionElement = document.getElementById('generated-movie-description');
     
@@ -2264,6 +2323,20 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
     descriptionElement.style.color = '#007bff';
     
     try {
+        // Сначала получаем миксированный текст из сообщений пользователей
+        const mixedTextResponse = await fetch('/api/admin/smart-batches/current-mixed-text');
+        const mixedTextData = await mixedTextResponse.json();
+        
+        let sourceText = '';
+        if (mixedTextData.success && mixedTextData.mixed_text) {
+            sourceText = mixedTextData.mixed_text;
+            console.log('📝 Используем миксированный текст пользователей:', sourceText);
+        } else {
+            // Fallback - используем технический промпт
+            sourceText = technicalPrompt;
+            console.log('⚠️ Миксированный текст недоступен, используем технический промпт');
+        }
+        
         const response = await fetch('/api/admin/generate-film-description', {
             method: 'POST',
             headers: {
@@ -2271,7 +2344,7 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
             },
             body: JSON.stringify({
                 film_title: filmTitle,
-                technical_prompt: technicalPrompt
+                technical_prompt: sourceText
             })
         });
         
@@ -2300,16 +2373,27 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
             
             descriptionElement.textContent = description;
             descriptionElement.style.color = '#333';
-            console.log('✅ Описание фильма сгенерировано:', description);
+            descriptionElement.style.fontStyle = 'normal';
+            console.log('✅ Описание фильма сгенерировано на основе пользовательских сообщений:', description);
         } else {
-            console.error('Ошибка генерации описания:', data.message);
-            // Fallback - используем технический промпт как есть
-            let fallbackDescription = technicalPrompt.trim();
-            if (fallbackDescription.length > 200) {
-                fallbackDescription = fallbackDescription.substring(0, 197) + '...';
+            const errorMessage = data.message || data.error || 'Неизвестная ошибка';
+            console.error('Ошибка генерации описания:', errorMessage);
+            
+            // Показываем информативное сообщение пользователю
+            if (errorMessage.includes('миксированного текста') || errorMessage.includes('обработать сообщения')) {
+                descriptionElement.textContent = 'Нет обработанных сообщений пользователей. Сначала дождитесь обработки батча или отправьте вопрос пользователям.';
+                descriptionElement.style.color = '#ff9800';
+                descriptionElement.style.fontStyle = 'italic';
+            } else {
+                // Fallback - используем миксированный текст как есть
+                let fallbackDescription = sourceText.trim();
+                if (fallbackDescription.length > 200) {
+                    fallbackDescription = fallbackDescription.substring(0, 197) + '...';
+                }
+                descriptionElement.textContent = fallbackDescription || 'Нет данных для генерации описания';
+                descriptionElement.style.color = '#666';
+                descriptionElement.style.fontStyle = 'italic';
             }
-            descriptionElement.textContent = fallbackDescription;
-            descriptionElement.style.color = '#666';
         }
     } catch (error) {
         console.error('Ошибка генерации описания фильма:', error);
@@ -2328,7 +2412,8 @@ async function regenerateFilmDescription() {
     if (currentPromptIndex >= 0 && currentPromptIndex < concertPrompts.length) {
         const prompt = concertPrompts[currentPromptIndex];
         console.log('🔄 Регенерируем описание для:', prompt.title);
-        await generateFilmDescription(prompt.title, prompt.description);
+        // Используем новую функцию генерации на основе названия
+        await generateFilmDescriptionFromTitle(prompt.title);
     } else {
         console.error('❌ Нет выбранного промта для регенерации');
         showNotification('Сначала выберите промт', 'warning');

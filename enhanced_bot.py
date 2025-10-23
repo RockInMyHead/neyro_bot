@@ -217,35 +217,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Выводим сообщение пользователя в консоль
     print(f"📨 Получено сообщение от {user.first_name} (ID: {user.id}): {user_message}")
     
-    # Добавляем сообщение в историю пользователя
+    # Добавляем сообщение в историю пользователя (локально)
     user_state.add_message(user_message, is_user=True)
     
-    # Добавляем сообщение в коллектор для админ бота
-    message_collector.add_message(
-        user_id=user.id,
-        username=user.username,
-        first_name=user.first_name,
-        message=user_message,
-        source='telegram'
-    )
-    
-    # Сохраняем в файловую БД для админ-панели
-    message_db.add_message(
-        user_id=user.id,
-        username=user.username or f"user_{user.id}",
-        first_name=user.first_name,
-        message=user_message,
-        source='telegram'
-    )
-    
-    # Добавляем в систему умных батчей
-    try:
-        msg_id = smart_batch_manager.add_message(user.id, user.username, user.first_name, user_message)
-        logger.info(f"✅ Сообщение добавлено в SmartBatchManager: {msg_id}")
-    except Exception as e:
-        logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
-    
     # Проверяем, есть ли контекст предыдущего сообщения от администратора
+    # ВАЖНО: Проверяем контекст ДО сохранения сообщения
     context_message = None
     
     # Сначала проверяем chat_history пользователя
@@ -274,7 +250,36 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             logger.warning(f"⚠️ Ошибка при поиске контекста в БД: {e}")
     
     if context_message:
-        # Есть контекст - оцениваем ответ пользователя с помощью LLM
+        # Есть контекст - это ответ на вопрос администратора
+        # СОХРАНЯЕМ сообщение пользователя в базу данных
+        logger.info(f"✅ Сообщение является ответом на вопрос администратора - сохраняем в БД")
+        
+        # Добавляем сообщение в коллектор для админ бота
+        message_collector.add_message(
+            user_id=user.id,
+            username=user.username,
+            first_name=user.first_name,
+            message=user_message,
+            source='telegram'
+        )
+        
+        # Сохраняем в файловую БД для админ-панели
+        message_db.add_message(
+            user_id=user.id,
+            username=user.username or f"user_{user.id}",
+            first_name=user.first_name,
+            message=user_message,
+            source='telegram'
+        )
+        
+        # Добавляем в систему умных батчей
+        try:
+            msg_id = smart_batch_manager.add_message(user.id, user.username, user.first_name, user_message)
+            logger.info(f"✅ Сообщение добавлено в SmartBatchManager: {msg_id}")
+        except Exception as e:
+            logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
+        
+        # Оцениваем ответ пользователя с помощью LLM
         try:
             # Формируем промпт для оценки ответа
             evaluation_prompt = f"""
@@ -327,21 +332,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 source='bot'
             )
     else:
-        # Нет контекста - стандартный ответ
+        # Нет контекста - произвольное сообщение, НЕ сохраняем в БД
+        logger.info(f"⚠️ Произвольное сообщение (без контекста вопроса администратора) - НЕ сохраняем в БД")
+        logger.info(f"📝 Сообщение: {user_message[:100]}...")
+        
+        # Стандартный ответ
         standard_response = "Пожалуйста, ожидайте, я пришлю анонс перед началом композиции 😌"
         await update.message.reply_text(standard_response)
         
-        # Добавляем ответ в историю пользователя
+        # Добавляем ответ в историю пользователя (локально)
         user_state.add_message(standard_response, is_user=False)
         
-        # Сохраняем ответ бота в файловую БД
-        message_db.add_message(
-            user_id=user.id,
-            username=user.username or f"user_{user.id}",
-            first_name=user.first_name,
-            message=standard_response,
-            source='bot'
-        )
+        # НЕ сохраняем ответ бота в файловую БД для произвольных сообщений
         
         logger.info(f"Стандартный ответ отправлен пользователю {user.first_name} (ID: {user.id})")
 
