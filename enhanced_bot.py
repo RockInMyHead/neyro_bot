@@ -277,17 +277,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not context_message:
         try:
             message_db.load_messages()
-            # Ищем последние сообщения от администратора для этого пользователя
+            # Ищем последние сообщения от администратора (они доступны ВСЕМ пользователям)
+            # Сообщения от админа имеют user_id=0 и source='admin'
             admin_messages = [msg for msg in message_db.messages 
-                            if msg.get('user_id') == user.id and 
-                               msg.get('source') == 'admin' and 
+                            if msg.get('source') == 'admin' and 
                                ('📽️' in msg.get('message', '') or '🎬' in msg.get('message', '') or 'фильм' in msg.get('message', '').lower() or '**' in msg.get('message', ''))]
             
             if admin_messages:
                 # Берем самое последнее сообщение от администратора
                 latest_admin_msg = max(admin_messages, key=lambda x: x.get('timestamp', 0))
                 context_message = latest_admin_msg.get('message', '')
-                logger.info(f"🔍 Найден контекст в БД: {context_message[:100]}...")
+                logger.info(f"🔍 Найден контекст от админа в БД: {context_message[:100]}...")
         except Exception as e:
             logger.warning(f"⚠️ Ошибка при поиске контекста в БД: {e}")
     
