@@ -1494,8 +1494,8 @@ function updateImagesGridDisplay(images) {
     
     console.log(`🖼️ Создаем ${images.length} карточек изображений`);
     imagesGrid.innerHTML = images.map(image => `
-        <div class="image-card" onclick="openImageModal('${image.image_url}', '${image.mixed_text}')">
-            <img src="${image.image_url}" alt="${image.mixed_text}" loading="lazy">
+        <div class="image-card">
+            <img src="${image.image_url}" alt="${image.mixed_text}" loading="lazy" onclick="openImageModal('${image.image_url}', '${image.mixed_text}')">
             <div class="image-card-content">
                 <div class="image-card-title">${image.mixed_text}</div>
                 <div class="image-card-meta">
@@ -1505,11 +1505,50 @@ function updateImagesGridDisplay(images) {
                         <span class="image-card-stat time">${image.processing_time ? image.processing_time.toFixed(1) : 'N/A'}с</span>
                     </div>
                 </div>
+                <div class="image-card-actions">
+                    <button class="image-download-btn" onclick="downloadImage('${image.image_url}', '${image.mixed_text}')" title="Скачать изображение">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                            <path d="M3 17h14v2H3v-2zM10 2l7 7h-4v8H7V9H3l7-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Скачать
+                    </button>
+                </div>
             </div>
         </div>
     `).join('');
     
     console.log('✅ Карточки изображений созданы');
+}
+
+// Скачивание изображения
+function downloadImage(imageUrl, imageTitle) {
+    console.log('📥 Скачиваем изображение:', imageUrl);
+    
+    try {
+        // Создаем временную ссылку для скачивания
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        
+        // Создаем безопасное имя файла
+        const safeTitle = imageTitle.replace(/[^a-zA-Z0-9а-яА-Я\s]/g, '').replace(/\s+/g, '_');
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `neuroevent_${safeTitle}_${timestamp}.png`;
+        
+        link.download = filename;
+        link.target = '_blank';
+        
+        // Добавляем ссылку в DOM, кликаем и удаляем
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('✅ Изображение скачано:', filename);
+        showNotification('Изображение скачано!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Ошибка скачивания изображения:', error);
+        showNotification('Ошибка скачивания изображения', 'error');
+    }
 }
 
 // Форматирование времени
@@ -2259,6 +2298,7 @@ window.regenerateFilmDescription = regenerateFilmDescription;
 window.togglePromptEdit = togglePromptEdit;
 window.savePromptEdit = savePromptEdit;
 window.cancelPromptEdit = cancelPromptEdit;
+window.downloadImage = downloadImage;
 
 // Функция выхода из системы
 async function logoutAdmin() {

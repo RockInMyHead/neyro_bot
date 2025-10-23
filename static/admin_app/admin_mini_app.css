@@ -1534,6 +1534,43 @@ body {
     color: #155724;
 }
 
+.image-card-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.image-download-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.image-download-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.image-download-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+}
+
+.image-download-btn svg {
+    flex-shrink: 0;
+}
+
 /* Стили для менеджера промтов */
 .prompt-manager {
     display: flex;
