@@ -4,7 +4,7 @@ Flask приложение только для админ-панели
 Mini App функционал перенесен в enhanced_bot.py
 """
 
-from flask import Flask, render_template, send_from_directory, request, jsonify, session
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect
 from flask_cors import CORS
 import time
 import os
@@ -102,6 +102,11 @@ def auto_generation_worker():
     
     while True:
         try:
+            # Сначала создаем батчи из накопленных сообщений
+            created_batches = smart_batch_manager.create_batches()
+            if created_batches:
+                logger.info(f"📦 Создано {len(created_batches)} новых батчей")
+            
             # Получаем следующий батч для обработки
             next_batch = smart_batch_manager.get_next_batch()
             
@@ -109,15 +114,15 @@ def auto_generation_worker():
                 time.sleep(5)  # Ждем 5 секунд, если нет батчей
                 continue
             
-            logger.info(f"🔄 Обрабатываем батч {next_batch.batch_id} с {next_batch.message_count} сообщениями")
+            logger.info(f"🔄 Обрабатываем батч {next_batch.id} с {next_batch.message_count} сообщениями")
             
             # Обрабатываем батч через sequential_processor
             result = sequential_processor.process_batch(next_batch)
             
             if result:
-                logger.info(f"✅ Батч {next_batch.batch_id} успешно обработан")
+                logger.info(f"✅ Батч {next_batch.id} успешно обработан")
             else:
-                logger.warning(f"⚠️ Батч {next_batch.batch_id} не был обработан")
+                logger.warning(f"⚠️ Батч {next_batch.id} не был обработан")
             
             # Небольшая пауза между циклами
             time.sleep(2)
@@ -140,38 +145,54 @@ CORS(app)
 last_admin_message_time = 0
 chat_clear_timestamp = None
 
-# Функция для отправки уведомлений в Telegram
-def send_telegram_message(user_id, message):
-    """Отправляет сообщение пользователю через Telegram Bot API"""
+# Старая функция удалена - используется новая send_telegram_message ниже
+
+def send_telegram_message(user_id, message_text):
+    """Отправляет простое сообщение без кнопки"""
     try:
-        url = f"https://api.telegram.org/bot{NEW_BOT_TOKEN}/sendMessage"
+        # Используем основной токен бота
+        bot_token = BOT_TOKEN
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        
+        logger.info(f"🚀 Отправляем простое сообщение пользователю {user_id} через токен {bot_token[:10]}...")
+        
         data = {
             'chat_id': user_id,
-            'text': message,
+            'text': message_text,
             'parse_mode': 'Markdown'
         }
+        
+        logger.info(f"📤 Данные для отправки: {data}")
+        
         response = requests.post(url, data=json.dumps(data), headers={'Content-Type': 'application/json'}, timeout=10)
+        
+        logger.info(f"📡 Ответ сервера: {response.status_code}")
+        logger.info(f"📄 Содержимое ответа: {response.text}")
         
         if response.status_code == 200:
             result = response.json()
             if result.get('ok'):
-                logger.info(f"Сообщение успешно отправлено пользователю {user_id}")
+                logger.info(f"✅ Простое сообщение успешно отправлено пользователю {user_id}")
                 return True
             else:
-                logger.error(f"Ошибка Telegram API для пользователя {user_id}: {result.get('description')}")
+                logger.error(f"❌ Ошибка Telegram API для пользователя {user_id}: {result.get('description')}")
                 return False
         else:
-            logger.error(f"HTTP ошибка при отправке сообщения пользователю {user_id}: {response.status_code}")
+            logger.error(f"❌ HTTP ошибка при отправке сообщения пользователю {user_id}: {response.status_code}")
             return False
             
     except Exception as e:
-        logger.error(f"Исключение при отправке сообщения пользователю {user_id}: {e}")
+        logger.error(f"❌ Исключение при отправке сообщения пользователю {user_id}: {e}")
         return False
 
 def send_telegram_notification_with_button(user_id, notification_text, button_text="🎬 Открыть бота", web_app_url=None):
     """Отправляет уведомление с кнопкой для перехода в бота"""
     try:
-        url = f"https://api.telegram.org/bot{NEW_BOT_TOKEN}/sendMessage"
+        # Используем основной токен бота
+        bot_token = BOT_TOKEN
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        
+        logger.info(f"🚀 Отправляем сообщение пользователю {user_id} через токен {bot_token[:10]}...")
         
         # Если URL не указан, используем дефолтный
         if not web_app_url:
@@ -191,22 +212,27 @@ def send_telegram_notification_with_button(user_id, notification_text, button_te
             }
         }
         
+        logger.info(f"📤 Данные для отправки: {data}")
+        
         response = requests.post(url, data=json.dumps(data), headers={'Content-Type': 'application/json'}, timeout=10)
+        
+        logger.info(f"📡 Ответ сервера: {response.status_code}")
+        logger.info(f"📄 Содержимое ответа: {response.text}")
         
         if response.status_code == 200:
             result = response.json()
             if result.get('ok'):
-                logger.info(f"Уведомление с кнопкой успешно отправлено пользователю {user_id}")
+                logger.info(f"✅ Уведомление с кнопкой успешно отправлено пользователю {user_id}")
                 return True
             else:
-                logger.error(f"Ошибка Telegram API для пользователя {user_id}: {result.get('description')}")
+                logger.error(f"❌ Ошибка Telegram API для пользователя {user_id}: {result.get('description')}")
                 return False
         else:
-            logger.error(f"HTTP ошибка при отправке уведомления пользователю {user_id}: {response.status_code}")
+            logger.error(f"❌ HTTP ошибка при отправке уведомления пользователю {user_id}: {response.status_code}")
             return False
             
     except Exception as e:
-        logger.error(f"Исключение при отправке уведомления пользователю {user_id}: {e}")
+        logger.error(f"❌ Исключение при отправке уведомления пользователю {user_id}: {e}")
         return False
 
 # Декоратор для проверки аутентификации администратора
@@ -217,6 +243,18 @@ def require_admin_auth(f):
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
+
+# Root route - redirect to admin
+@app.route('/')
+def root():
+    """Корневой маршрут - перенаправляет на админ-панель"""
+    return redirect('/admin')
+
+# Favicon route
+@app.route('/favicon.ico')
+def favicon():
+    """Возвращает пустой ответ для favicon"""
+    return '', 204
 
 # Admin Login Page
 @app.route('/admin/login')
@@ -242,9 +280,23 @@ def admin_stats():
 
 @app.route('/api/admin/messages', methods=['GET'])
 def admin_messages():
-    message_db.load_messages()
-    all_messages = message_db.messages
-    return jsonify(all_messages)
+    try:
+        message_db.load_messages()
+        all_messages = message_db.messages
+        
+        # Фильтруем только сообщения пользователей (исключаем admin и bot)
+        user_messages = [msg for msg in all_messages if msg.get('source') in ['telegram', 'mini_app']]
+        
+        return jsonify({
+            'success': True,
+            'messages': user_messages
+        })
+    except Exception as e:
+        logger.error(f"Ошибка получения сообщений: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/admin/export', methods=['GET'])
 def admin_export():
@@ -349,7 +401,7 @@ def smart_batches_stats():
 def smart_batches_list():
     """Получает список всех батчей"""
     try:
-        batches = smart_batch_manager.get_all_batches()
+        batches = smart_batch_manager.get_all_batches_info()
         batches_data = []
         for batch in batches:
             batches_data.append({
@@ -430,7 +482,7 @@ def smart_batches_current_mixed_text():
     """Получает миксированный текст последнего обработанного батча"""
     try:
         # Получаем последний обработанный батч
-        completed_batches = smart_batch_manager.get_completed_batches()
+        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.status == 'completed']
         
         if not completed_batches:
             return jsonify({
@@ -460,7 +512,7 @@ def smart_batches_images():
     """Получить список сгенерированных изображений"""
     try:
         # Получаем все завершенные батчи с изображениями
-        completed_batches = smart_batch_manager.get_completed_batches()
+        completed_batches = [batch for batch in smart_batch_manager.get_all_batches_info() if batch.status == 'completed']
         images_data = []
         
         for batch in completed_batches:
@@ -618,10 +670,15 @@ def admin_send_concert_message():
     """Отправляет сообщение перед треком всем пользователям"""
     try:
         data = request.get_json()
+        logger.info(f"📨 Получены данные для отправки сообщения: {data}")
+        
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
         
-        message = data.get('message', '').strip()
+        # Поддерживаем как 'message', так и 'content' для совместимости
+        message = data.get('message', '').strip() or data.get('content', '').strip()
+        logger.info(f"📝 Извлеченное сообщение: {message[:100]}...")
+        
         if not message:
             return jsonify({'success': False, 'error': 'Message is required'}), 400
         
@@ -656,19 +713,35 @@ def admin_send_concert_message():
                 if msg.get('source') == 'telegram' and msg.get('user_id') is not None:
                     telegram_users.add(msg['user_id'])
             
-            logger.info(f"Найдено {len(telegram_users)} пользователей Telegram для отправки сообщения")
-            logger.info(f"ID пользователей: {list(telegram_users)}")
+            logger.info(f"📊 Найдено {len(telegram_users)} пользователей Telegram для отправки сообщения")
+            logger.info(f"👥 ID пользователей: {list(telegram_users)}")
+            
+            # Если нет пользователей, попробуем найти в других источниках
+            if not telegram_users:
+                logger.warning("⚠️ Не найдено пользователей Telegram в базе данных")
+                logger.info("🔍 Попробуем найти пользователей в других источниках...")
+                
+                # Ищем пользователей из enhanced_bot
+                for msg in all_messages:
+                    if msg.get('user_id') is not None and msg.get('user_id') != 0:
+                        telegram_users.add(msg['user_id'])
+                        logger.info(f"👤 Найден пользователь из другого источника: {msg['user_id']}")
+                
+                # Если все еще нет пользователей, добавим тестового пользователя
+                if not telegram_users:
+                    logger.warning("⚠️ Все еще нет пользователей, добавляем тестового пользователя")
+                    # Добавляем тестового пользователя (замените на реальный ID)
+                    test_user_id = 123456789  # Замените на реальный ID пользователя
+                    telegram_users.add(test_user_id)
+                    logger.info(f"🧪 Добавлен тестовый пользователь: {test_user_id}")
+                
+                logger.info(f"📊 Итого найдено {len(telegram_users)} пользователей")
             
             sent_count = 0
             for user_id in telegram_users:
                 try:
-                    # Отправляем сообщение с кнопкой
-                    notification_text = f"🎬 **Новое сообщение от администратора!**\n\n{message}\n\nНажмите кнопку ниже, чтобы открыть бота и ответить."
-                    success = send_telegram_notification_with_button(
-                        user_id, 
-                        notification_text, 
-                        "💬 Открыть бота"
-                    )
+                    # Отправляем простое сообщение без кнопки
+                    success = send_telegram_message(user_id, message)
                     if success:
                         sent_count += 1
                         logger.info(f"✅ Сообщение отправлено пользователю {user_id}")
@@ -832,6 +905,40 @@ def check_admin_auth():
     except Exception as e:
         logger.error(f"Ошибка проверки аутентификации: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Test endpoint for getting user ID
+@app.route('/api/admin/test-user-id', methods=['GET'])
+def test_user_id():
+    """Тестовый endpoint для получения ID пользователя"""
+    try:
+        # Получаем последние сообщения
+        message_db.load_messages()
+        all_messages = message_db.messages
+        
+        # Ищем пользователей
+        users = []
+        for msg in all_messages:
+            if msg.get('user_id') is not None and msg.get('user_id') != 0:
+                users.append({
+                    'user_id': msg['user_id'],
+                    'username': msg.get('username', 'Unknown'),
+                    'first_name': msg.get('first_name', 'Unknown'),
+                    'source': msg.get('source', 'Unknown'),
+                    'timestamp': msg.get('timestamp', 'Unknown')
+                })
+        
+        return jsonify({
+            'success': True,
+            'users': users,
+            'total_users': len(users)
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения пользователей: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # Base prompt endpoints
 @app.route('/api/admin/get-base-prompt', methods=['GET'])

@@ -83,7 +83,7 @@ def get_prompt_info():
     """
     current_prompt = _read_prompt_from_file()
     return {
-        "current_prompt": current_prompt,
-        "prompt_length": len(current_prompt),
-        "prompt_preview": current_prompt[:100] + "..." if len(current_prompt) > 100 else current_prompt
+        "prompt": current_prompt,
+        "length": len(current_prompt),
+        "preview": current_prompt[:100] + "..." if len(current_prompt) > 100 else current_prompt
     }

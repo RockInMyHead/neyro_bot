@@ -1570,6 +1570,9 @@ async function loadGeneratedImages() {
         
         if (data.success) {
             console.log(`✅ Загружено ${data.images.length} изображений`);
+            if (data.images.length === 0) {
+                console.log('📭 Нет изображений для отображения');
+            }
             updateImagesGridDisplay(data.images);
         } else {
             console.error('Ошибка загрузки изображений:', data.error);

@@ -7,8 +7,8 @@
 import logging
 import asyncio
 import time
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from config import BOT_TOKEN
 from openai_client import get_openai_response, test_openai_connection
 from message_collector import message_collector
@@ -62,32 +62,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_state = get_user_state(user.id)
     
-    # Создаем главное меню
-    main_menu = [
-        [KeyboardButton("🎬 Фильмы"), KeyboardButton("🎵 Музыка")],
-        [KeyboardButton("🎭 Искусство"), KeyboardButton("📚 Книги")],
-        [KeyboardButton("🎮 Игры"), KeyboardButton("🌍 Путешествия")],
-        [KeyboardButton("💡 Идеи"), KeyboardButton("❓ Помощь")]
-    ]
-    reply_markup = ReplyKeyboardMarkup(main_menu, resize_keyboard=True, one_time_keyboard=False)
+    # Убираем кнопки - используем только текстовые сообщения
+    reply_markup = None
     
     welcome_text = f"""
-🎭 **Добро пожаловать в Neuroevent Bot!** 🎭
+🎵 **Команда Neuroevent приветствует Вас!** 🎵
 
-Привет, {user.first_name}! 👋
+Я — Ваш виртуальный помощник на концерте Main Strings Orchestra.
 
-Я — ваш виртуальный помощник на концерте Main Strings Orchestra. 
+Перед каждым треком я пришлю краткий анонс киновселенной и один вопрос.
+Ваш короткий ответ поможет ИИ оперативно сформировать визуальные образы.
 
-🎵 **Что я умею:**
-• Обсуждать фильмы и музыку
-• Генерировать креативные идеи
-• Отвечать на вопросы об искусстве
-• Помогать с творческими задачами
+**Важно:** один трек — один ответ. Пишите коротко и наслаждайтесь происходящим на сцене — главное эмоции, а не телефон 😊
 
-💬 **Просто напишите мне что угодно!**
-Используйте кнопки ниже для быстрого доступа к темам.
-
-🎯 **Готов к общению!**
+Скоро начнём! ✨
     """
     
     await update.message.reply_text(
@@ -218,20 +206,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user = update.effective_user
     user_state = get_user_state(user.id)
     
-    # Проверяем, не обрабатывается ли уже сообщение
-    if user_state.is_waiting_for_response:
-        await update.message.reply_text("⏳ Пожалуйста, подождите, я еще думаю над предыдущим сообщением...")
-        return
-    
     # Проверяем частоту сообщений (защита от спама)
     current_time = time.time()
     if current_time - user_state.last_message_time < 2:  # Минимум 2 секунды между сообщениями
-        await update.message.reply_text("⏳ Пожалуйста, не торопитесь! Дайте мне время подумать...")
-        return
+        return  # Просто игнорируем слишком частые сообщения
     
     user_state.last_message_time = current_time
     user_state.message_count += 1
-    user_state.is_waiting_for_response = True
     
     # Выводим сообщение пользователя в консоль
     print(f"📨 Получено сообщение от {user.first_name} (ID: {user.id}): {user_message}")
@@ -264,92 +245,107 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as e:
         logger.warning(f"⚠️ Не удалось добавить сообщение в SmartBatchManager: {e}")
     
-    # Показываем индикатор печати
-    await update.message.chat.send_action("typing")
+    # Проверяем, есть ли контекст предыдущего сообщения от администратора
+    context_message = None
     
-    try:
-        # Создаем контекст для AI на основе истории чата
-        conversation_context = ""
-        if user_state.chat_history:
-            recent_messages = user_state.chat_history[-5:]  # Последние 5 сообщений
-            for msg in recent_messages:
-                if msg['is_user']:
-                    conversation_context += f"Пользователь: {msg['message']}\n"
-                else:
-                    conversation_context += f"Бот: {msg['message']}\n"
-        
-        # Формируем промпт с контекстом
-        if conversation_context:
-            full_prompt = f"Контекст разговора:\n{conversation_context}\n\nТекущее сообщение пользователя: {user_message}\n\nОтветь как творческий помощник, учитывая контекст разговора."
-        else:
-            full_prompt = user_message
-        
-        # Получаем ответ от OpenAI
-        ai_response = await get_openai_response(full_prompt)
-        
-        # Отправляем ответ пользователю
-        await update.message.reply_text(ai_response)
+    # Сначала проверяем chat_history пользователя
+    if user_state.chat_history:
+        for msg in reversed(user_state.chat_history):
+            if not msg['is_user'] and ('📽️' in msg['message'] or '🎬' in msg['message'] or 'фильм' in msg['message'].lower() or '**' in msg['message']):
+                context_message = msg['message']
+                break
+    
+    # Если не нашли в chat_history, ищем в базе данных сообщений от администратора
+    if not context_message:
+        try:
+            message_db.load_messages()
+            # Ищем последние сообщения от администратора для этого пользователя
+            admin_messages = [msg for msg in message_db.messages 
+                            if msg.get('user_id') == user.id and 
+                               msg.get('source') == 'admin' and 
+                               ('📽️' in msg.get('message', '') or '🎬' in msg.get('message', '') or 'фильм' in msg.get('message', '').lower() or '**' in msg.get('message', ''))]
+            
+            if admin_messages:
+                # Берем самое последнее сообщение от администратора
+                latest_admin_msg = max(admin_messages, key=lambda x: x.get('timestamp', 0))
+                context_message = latest_admin_msg.get('message', '')
+                logger.info(f"🔍 Найден контекст в БД: {context_message[:100]}...")
+        except Exception as e:
+            logger.warning(f"⚠️ Ошибка при поиске контекста в БД: {e}")
+    
+    if context_message:
+        # Есть контекст - оцениваем ответ пользователя с помощью LLM
+        try:
+            # Формируем промпт для оценки ответа
+            evaluation_prompt = f"""
+Ты - концертный анонсер на мероприятии. Пользователь ответил на твой вопрос о фильме.
+
+Контекст: {context_message[:200]}...
+
+Ответ пользователя: {user_message}
+
+Задача: Оцени ответ пользователя в положительном ключе и поблагодари его. Будь искренним и воодушевляющим. НЕ задавай дополнительные вопросы.
+
+Формат ответа: Короткое сообщение (1-2 предложения) с оценкой и благодарностью.
+"""
+            
+            # Получаем оценку от LLM
+            llm_response = await get_openai_response(evaluation_prompt)
+            
+            # Отправляем оценку пользователю
+            await update.message.reply_text(llm_response)
+            
+            # Добавляем ответ в историю пользователя
+            user_state.add_message(llm_response, is_user=False)
+            
+            # Сохраняем ответ бота в файловую БД
+            message_db.add_message(
+                user_id=user.id,
+                username=user.username or f"user_{user.id}",
+                first_name=user.first_name,
+                message=llm_response,
+                source='bot'
+            )
+            
+            logger.info(f"LLM оценка отправлена пользователю {user.first_name} (ID: {user.id})")
+            
+        except Exception as e:
+            logger.error(f"Ошибка при оценке ответа пользователя: {e}")
+            # Fallback - стандартный ответ
+            fallback_response = "Спасибо за ваш ответ! ✨ Ваши мысли очень ценны для нас."
+            await update.message.reply_text(fallback_response)
+            
+            # Добавляем fallback в историю
+            user_state.add_message(fallback_response, is_user=False)
+            
+            # Сохраняем fallback в БД
+            message_db.add_message(
+                user_id=user.id,
+                username=user.username or f"user_{user.id}",
+                first_name=user.first_name,
+                message=fallback_response,
+                source='bot'
+            )
+    else:
+        # Нет контекста - стандартный ответ
+        standard_response = "Пожалуйста, ожидайте, я пришлю анонс перед началом композиции 😌"
+        await update.message.reply_text(standard_response)
         
         # Добавляем ответ в историю пользователя
-        user_state.add_message(ai_response, is_user=False)
+        user_state.add_message(standard_response, is_user=False)
         
-        # Сохраняем ответ бота в БД
+        # Сохраняем ответ бота в файловую БД
         message_db.add_message(
-            user_id=0,  # ID бота = 0
-            username="neyro_bot",
-            first_name="Нейро-бот",
-            message=ai_response,
+            user_id=user.id,
+            username=user.username or f"user_{user.id}",
+            first_name=user.first_name,
+            message=standard_response,
             source='bot'
         )
         
-        # Проверяем, нужно ли задать вопрос
-        next_question = question_system.get_next_question(user.id)
-        if next_question:
-            # Ждем 2 секунды перед вопросом
-            await asyncio.sleep(2)
-            await update.message.reply_text(next_question)
-            
-            # Добавляем вопрос в историю
-            user_state.add_message(next_question, is_user=False)
-            
-            # Сохраняем вопрос в БД
-            message_db.add_message(
-                user_id=0,  # ID бота = 0
-                username="neyro_bot",
-                first_name="Нейро-бот",
-                message=next_question,
-                source='bot'
-            )
-        
-        logger.info(f"OpenAI response sent to user {user.first_name} (ID: {user.id})")
-        
-    except Exception as e:
-        logger.error(f"Error processing message: {e}")
-        print(f"❌ Ошибка при обработке сообщения: {e}")
-        
-        # Fallback ответ в случае ошибки
-        fallback_response = f"Привет, {user.first_name}! 👋\n\n{get_friendly_response()}"
-        await update.message.reply_text(fallback_response)
-        
-        # Добавляем fallback в историю
-        user_state.add_message(fallback_response, is_user=False)
-    
-    finally:
-        # Сбрасываем флаг ожидания ответа
-        user_state.is_waiting_for_response = False
+        logger.info(f"Стандартный ответ отправлен пользователю {user.first_name} (ID: {user.id})")
 
-# Обработчик нажатий на кнопки
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обрабатывает нажатия на inline кнопки"""
-    query = update.callback_query
-    await query.answer()
-    
-    if query.data == 'stats':
-        await query.edit_message_text("📊 **Статистика бота:**\n\n• Пользователей: Активно\n• Сообщений: Обработано\n• Время работы: Активен", parse_mode='Markdown')
-    elif query.data == 'settings':
-        await query.edit_message_text("⚙️ **Настройки:**\n\n• Уведомления: Включены\n• Язык: Русский\n• Режим: Творческий", parse_mode='Markdown')
-    elif query.data == 'help':
-        await help_command(update, context)
+# Обработчик кнопок удален - кнопки больше не используются
 
 # Обработчик ошибок
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -390,8 +386,7 @@ def main() -> None:
     # Добавляем обработчик текстовых сообщений
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Добавляем обработчик нажатий на кнопки
-    application.add_handler(CallbackQueryHandler(button_callback))
+    # Обработчик кнопок удален - кнопки больше не используются
     
     # Добавляем обработчик ошибок
     application.add_error_handler(error_handler)
