@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEUROEVENT • Админ Панель - Вход</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_app/admin_login.css') }}">
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="animated-bg">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <span class="logo-icon">🎵</span>
+                    <span class="logo-text">NEUROEVENT</span>
+                </div>
+                <h1>Админ Панель</h1>
+                <p>Введите пароль для доступа к системе управления</p>
+            </div>
+            
+            <form class="login-form" id="login-form">
+                <div class="form-group">
+                    <label for="password">Пароль администратора</label>
+                    <div class="password-input-container">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Введите пароль..."
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
+                            <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M10 3c-3.5 0-6.5 2.5-8 6 1.5 3.5 4.5 6 8 6s6.5-2.5 8-6c-1.5-3.5-4.5-6-8-6Z" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span class="btn-text">Войти в систему</span>
+                    <div class="btn-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>Проверка...</span>
+                    </div>
+                </button>
+                
+                <div class="error-message" id="error-message" style="display: none;"></div>
+            </form>
+            
+            <div class="login-footer">
+                <p>Система управления концертом Main Strings Orchestra</p>
+                <p class="version">v1.0 • AI Interactive Experience</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='admin_app/admin_login.js') }}?v=1"></script>
+</body>
+</html>

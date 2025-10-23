@@ -2051,3 +2051,36 @@ window.openImageModal = openImageModal;
 window.toggleStatsDropdown = toggleStatsDropdown;
 window.clearAllMessages = clearAllMessages;
 window.regenerateFilmDescription = regenerateFilmDescription;
+
+// Функция выхода из системы
+async function logoutAdmin() {
+    const confirmed = confirm('Вы уверены, что хотите выйти из системы?');
+    
+    if (confirmed) {
+        try {
+            const response = await fetch('/api/admin/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('👋 Успешный выход из системы');
+                // Перенаправляем на страницу входа
+                window.location.href = '/admin/login';
+            } else {
+                console.error('Ошибка выхода:', data.message);
+                alert('Ошибка при выходе из системы');
+            }
+        } catch (error) {
+            console.error('Ошибка сети при выходе:', error);
+            alert('Ошибка соединения');
+        }
+    }
+}
+
+// Экспорт функции выхода
+window.logoutAdmin = logoutAdmin;

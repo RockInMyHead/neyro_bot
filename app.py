@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request, jsonify
+from flask import Flask, render_template, send_from_directory, request, jsonify, session
 from flask_cors import CORS
 import time
 import os
@@ -109,17 +109,56 @@ def send_telegram_message(user_id, message):
         return False
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'neuroevent_admin_secret_key_2024')
+
 # Enable CORS for API routes
 CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# Декоратор для проверки аутентификации администратора
+def require_admin_auth(f):
+    def decorated_function(*args, **kwargs):
+        is_authenticated = session.get('admin_authenticated', False)
+        login_time = session.get('admin_login_time', 0)
+        
+        # Проверяем, не истекла ли сессия (24 часа)
+        if is_authenticated and time.time() - login_time > 86400:
+            session.pop('admin_authenticated', None)
+            session.pop('admin_login_time', None)
+            is_authenticated = False
+        
+        if not is_authenticated:
+            return jsonify({"success": False, "message": "Требуется аутентификация"}), 401
+        
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
 
 # Serve Mini App
 @app.route('/')
 def mini_app():
     return render_template('mini_app.html')
 
-# Serve Admin Panel
+# Admin Login Page
+@app.route('/admin/login')
+def admin_login_page():
+    return render_template('admin_login.html')
+
+# Admin Panel (Protected)
 @app.route('/admin')
 def admin_app():
+    # Проверяем аутентификацию
+    is_authenticated = session.get('admin_authenticated', False)
+    login_time = session.get('admin_login_time', 0)
+    
+    # Проверяем, не истекла ли сессия (24 часа)
+    if is_authenticated and time.time() - login_time > 86400:
+        session.pop('admin_authenticated', None)
+        session.pop('admin_login_time', None)
+        is_authenticated = False
+    
+    if not is_authenticated:
+        return render_template('admin_login.html')
+    
     return render_template('admin_mini_app.html')
 
 # Mini App API endpoint
@@ -190,6 +229,7 @@ def api_chat():
 
 # Admin stats endpoint
 @app.route('/api/admin/stats', methods=['GET'])
+@require_admin_auth
 def admin_stats():
     message_db.load_messages()
     stats = message_db.get_stats()
@@ -352,6 +392,7 @@ def admin_batch_status():
 # ============================================================================
 
 @app.route('/api/admin/smart-batches/stats', methods=['GET'])
+@require_admin_auth
 def smart_batches_stats():
     """Получает статистику умной системы батчей"""
     try:
@@ -458,6 +499,7 @@ def smart_batches_current_mixed_text():
         return jsonify(success=False, error=str(e)), 500
 
 @app.route('/api/admin/smart-batches/images', methods=['GET'])
+@require_admin_auth
 def smart_batches_images():
     """Получить список сгенерированных изображений"""
     try:
@@ -704,6 +746,7 @@ def get_latest_message():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/admin/send-concert-message', methods=['POST'])
+@require_admin_auth
 def admin_send_concert_message():
     """Отправляет концертное сообщение в чат"""
     try:
@@ -902,6 +945,75 @@ def generate_film_description():
         
     except Exception as e:
         logger.error(f"Ошибка генерации описания фильма: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    """Проверка пароля администратора"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        # Проверяем пароль
+        if password == '440521':
+            # Создаем сессию
+            session['admin_authenticated'] = True
+            session['admin_login_time'] = time.time()
+            
+            logger.info("✅ Администратор успешно вошел в систему")
+            return jsonify({
+                "success": True,
+                "message": "Успешный вход в систему"
+            })
+        else:
+            logger.warning("❌ Неверный пароль администратора")
+            return jsonify({
+                "success": False,
+                "message": "Неверный пароль"
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Ошибка входа администратора: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/admin/logout', methods=['POST'])
+def admin_logout():
+    """Выход администратора"""
+    try:
+        session.pop('admin_authenticated', None)
+        session.pop('admin_login_time', None)
+        
+        logger.info("👋 Администратор вышел из системы")
+        return jsonify({
+            "success": True,
+            "message": "Успешный выход из системы"
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка выхода администратора: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/admin/check-auth', methods=['GET'])
+def check_admin_auth():
+    """Проверка аутентификации администратора"""
+    try:
+        is_authenticated = session.get('admin_authenticated', False)
+        login_time = session.get('admin_login_time', 0)
+        
+        # Проверяем, не истекла ли сессия (24 часа)
+        if is_authenticated and time.time() - login_time > 86400:
+            session.pop('admin_authenticated', None)
+            session.pop('admin_login_time', None)
+            is_authenticated = False
+        
+        return jsonify({
+            "success": True,
+            "authenticated": is_authenticated,
+            "login_time": login_time
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка проверки аутентификации: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 # Запуск сервера

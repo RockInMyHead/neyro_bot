@@ -12,8 +12,18 @@
     <div class="container">
         <!-- Заголовок -->
         <header class="header">
-            <h1>🔧 Админ панель</h1>
-            <p>Мониторинг сообщений пользователей</p>
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>🔧 Админ панель</h1>
+                    <p>Мониторинг сообщений пользователей</p>
+                </div>
+                <button class="logout-btn" onclick="logoutAdmin()" title="Выйти из системы">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2M13 7l3 3-3 3M16 10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Выйти</span>
+                </button>
+            </div>
         </header>
 
         <!-- Основной контент -->
@@ -173,6 +183,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=19"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=20"></script>
 </body>
 </html>
