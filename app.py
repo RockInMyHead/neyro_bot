@@ -548,7 +548,8 @@ def smart_batches_images():
         completed_batches = [b for b in batches if b['status'] == 'completed' and b.get('image_path')]
         
         # Сортируем по времени завершения (новые сначала)
-        completed_batches.sort(key=lambda x: x.get('completed_at', 0), reverse=True)
+        # Защищаемся от None значений в completed_at
+        completed_batches.sort(key=lambda x: x.get('completed_at') or 0, reverse=True)
         
         images_data = []
         for batch in completed_batches:
@@ -561,9 +562,9 @@ def smart_batches_images():
                     'mixed_text': batch.get('mixed_text', ''),
                     'image_url': image_url,
                     'image_path': image_path,
-                    'completed_at': batch.get('completed_at'),
-                    'processing_time': batch.get('processing_time', 0),
-                    'message_count': batch.get('message_count', 0)
+                    'completed_at': batch.get('completed_at') or 0,
+                    'processing_time': batch.get('processing_time') or 0,
+                    'message_count': batch.get('message_count') or 0
                 })
         
         response = jsonify({
