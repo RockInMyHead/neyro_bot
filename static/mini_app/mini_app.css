@@ -164,6 +164,8 @@ body {
     object-fit: contain;
     filter: brightness(0.9);
     transition: all 0.3s ease;
+    /* Обрезаем сверху и снизу на 20% */
+    clip-path: inset(20% 0 20% 0);
 }
 
 .logo-image:hover {
@@ -600,6 +602,8 @@ body {
     
     .logo-image {
         height: 250px;
+        /* Обрезаем сверху и снизу на 20% для мобильных */
+        clip-path: inset(20% 0 20% 0);
     }
     
     .chat-container {
@@ -636,6 +640,8 @@ body {
     
     .logo-image {
         height: 200px;
+        /* Обрезаем сверху и снизу на 20% для маленьких экранов */
+        clip-path: inset(20% 0 20% 0);
     }
     
     .chat-messages {
