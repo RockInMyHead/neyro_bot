@@ -1021,11 +1021,25 @@ async function sendTrackMessage() {
     console.log('Значения полей:', {
         title: titleValue,
         description: descriptionValue,
-        actors: actorsValue
+        actors: actorsValue,
+        titleLength: titleValue.length,
+        descriptionLength: descriptionValue.length,
+        actorsLength: actorsValue.length
     });
     
-    if (!titleValue || !descriptionValue || !actorsValue) {
-        showNotification('Пожалуйста, заполните все поля', 'warning');
+    // Проверяем, что поля не содержат значения по умолчанию
+    if (titleValue === 'Выберите промт' || titleValue === 'Загрузка...') {
+        showNotification('Пожалуйста, выберите промт из списка', 'warning');
+        return;
+    }
+    
+    if (descriptionValue === 'Загрузка...' || descriptionValue === 'Генерация описания...') {
+        showNotification('Пожалуйста, дождитесь генерации описания', 'warning');
+        return;
+    }
+    
+    if (actorsValue === 'Загрузка...') {
+        showNotification('Пожалуйста, дождитесь загрузки информации об актерах', 'warning');
         return;
     }
     
@@ -1040,6 +1054,11 @@ ${descriptionValue}
 Какие образы или пейзажи возникают у вас, когда вы думаете об этой истории?`;
     
     try {
+        console.log('Отправляем запрос на /api/admin/send-concert-message с данными:', {
+            type: 'track_message',
+            content: message
+        });
+        
         const response = await fetch('/api/admin/send-concert-message', {
             method: 'POST',
             headers: {
@@ -1051,16 +1070,18 @@ ${descriptionValue}
             })
         });
         
+        console.log('Ответ сервера:', response.status, response.statusText);
+        
         const data = await response.json();
+        
+        console.log('Данные ответа:', data);
         
         if (data.success) {
             showNotification('Сообщение перед треком отправлено!', 'success');
-            // Очищаем поля
-            movieTitle.value = '';
-            movieDescription.value = '';
-            movieActors.value = '';
+            console.log('✅ Сообщение успешно отправлено');
         } else {
             showNotification(data.message || 'Ошибка отправки сообщения', 'error');
+            console.error('❌ Ошибка отправки:', data.message);
         }
     } catch (error) {
         console.error('Ошибка отправки сообщения перед треком:', error);
@@ -2171,31 +2192,31 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         const data = await response.json();
         
         if (data.success) {
-            // Ограничиваем длину описания до 100 символов
+            // Ограничиваем длину описания до 300 символов для более подробного описания
             let description = data.description.trim();
-            if (description.length > 100) {
-                description = description.substring(0, 97) + '...';
+            if (description.length > 300) {
+                description = description.substring(0, 297) + '...';
             }
             
             descriptionElement.textContent = description;
             descriptionElement.style.color = '#333';
-            console.log('✅ Описание фильма сгенерировано (обрезано до 100 символов):', description);
+            console.log('✅ Описание фильма сгенерировано (обрезано до 300 символов):', description);
         } else {
             console.error('Ошибка генерации описания:', data.message);
-            // Fallback тоже обрезаем до 100 символов
+            // Fallback тоже обрезаем до 300 символов
             let fallbackDescription = technicalPrompt.trim();
-            if (fallbackDescription.length > 100) {
-                fallbackDescription = fallbackDescription.substring(0, 97) + '...';
+            if (fallbackDescription.length > 300) {
+                fallbackDescription = fallbackDescription.substring(0, 297) + '...';
             }
             descriptionElement.textContent = fallbackDescription;
             descriptionElement.style.color = '#666';
         }
     } catch (error) {
         console.error('Ошибка генерации описания фильма:', error);
-        // Fallback тоже обрезаем до 100 символов
+        // Fallback тоже обрезаем до 300 символов
         let fallbackDescription = technicalPrompt.trim();
-        if (fallbackDescription.length > 100) {
-            fallbackDescription = fallbackDescription.substring(0, 97) + '...';
+        if (fallbackDescription.length > 300) {
+            fallbackDescription = fallbackDescription.substring(0, 297) + '...';
         }
         descriptionElement.textContent = fallbackDescription;
         descriptionElement.style.color = '#666';
@@ -2420,7 +2441,7 @@ async function clearAllChats() {
             await loadSmartBatchStats();
             await loadSmartBatchList();
             await loadGeneratedImages();
-            await loadMessages();
+            await refreshMessages();
             
             console.log('Вся история чатов успешно очищена');
         } else {
