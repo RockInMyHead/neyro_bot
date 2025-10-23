@@ -681,8 +681,18 @@ let isWaitingForAdminMessage = false; // Флаг ожидания сообще�
 // Функция для получения последнего сообщения от админа
 async function getLatestMessage() {
     try {
+        console.log('🔍 Запрашиваем последнее сообщение от админа...');
         const response = await fetch('/api/mini-app/latest-message');
         const data = await response.json();
+        
+        console.log('📨 Ответ от сервера:', {
+            success: data.success,
+            hasMessage: !!data.message,
+            messageLength: data.message ? data.message.length : 0,
+            timestamp: data.timestamp,
+            isInitialized: isInitialized,
+            lastMessageTimestamp: lastMessageTimestamp
+        });
         
         if (data.success && data.message && data.timestamp) {
             // При первой инициализации просто запоминаем timestamp, не показываем сообщение
@@ -696,6 +706,7 @@ async function getLatestMessage() {
             // Проверяем, не получали ли мы уже это сообщение
             if (data.timestamp > lastMessageTimestamp) {
                 console.log('📨 Получено новое сообщение от администратора');
+                console.log('📨 Содержимое сообщения:', data.message.substring(0, 100) + '...');
                 
                 // Добавляем сообщение в чат
                 addMessageToChat(data.message, false);
@@ -712,7 +723,11 @@ async function getLatestMessage() {
                 lastMessageTimestamp = data.timestamp;
                 
                 console.log('✅ Сообщение от администратора обработано:', data.message.substring(0, 50) + '...');
+            } else {
+                console.log('🔍 Сообщение уже было получено ранее или timestamp не изменился');
             }
+        } else {
+            console.log('❌ Нет сообщений от админа или ошибка в ответе');
         }
     } catch (error) {
         console.error('Ошибка получения последнего сообщения:', error);

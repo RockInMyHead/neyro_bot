@@ -852,14 +852,23 @@ def get_latest_message():
         message_db.load_messages()
         admin_messages = [msg for msg in message_db.messages if msg.get('source') == 'admin']
         
+        logger.info(f"🔍 Поиск сообщений от админа: найдено {len(admin_messages)} сообщений")
+        logger.info(f"🔍 Все сообщения в БД: {len(message_db.messages)}")
+        
+        # Логируем все источники сообщений для отладки
+        sources = [msg.get('source', 'unknown') for msg in message_db.messages]
+        logger.info(f"🔍 Источники сообщений: {set(sources)}")
+        
         if admin_messages:
             latest_message = max(admin_messages, key=lambda x: x.get('timestamp', 0))
+            logger.info(f"✅ Найдено последнее сообщение от админа: {latest_message.get('message', '')[:50]}...")
             return jsonify({
                 "success": True,
                 "message": latest_message.get('message', ''),
                 "timestamp": latest_message.get('timestamp', 0)
             })
         else:
+            logger.info("❌ Сообщения от админа не найдены")
             return jsonify({
                 "success": True,
                 "message": "",
@@ -971,6 +980,7 @@ P.S. Ответы анонимны."""
         
         # Save admin message to DB
         try:
+            logger.info(f"💾 Сохраняем админское сообщение в БД: {message[:100]}...")
             message_db.add_message(
                 user_id=0,
                 username='Admin',
@@ -978,8 +988,9 @@ P.S. Ответы анонимны."""
                 message=message,
                 source='admin'
             )
+            logger.info("✅ Админское сообщение успешно сохранено в БД")
         except Exception as e:
-            logger.warning(f"Не удалось сохранить админское сообщение: {e}")
+            logger.error(f"❌ Не удалось сохранить админское сообщение: {e}")
         
         return jsonify({
             "success": True, 
