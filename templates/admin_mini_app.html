@@ -14,8 +14,8 @@
         <header class="header">
             <div class="header-content">
                 <div class="header-info">
-                    <h1>🔧 Админ панель</h1>
-                    <p>Мониторинг сообщений пользователей</p>
+            <h1>🔧 Админ панель</h1>
+            <p>Мониторинг сообщений пользователей</p>
                 </div>
                 <button class="logout-btn" onclick="logoutAdmin()" title="Выйти из системы">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -70,10 +70,10 @@
                    <div class="images-grid" id="images-grid">
                        Загрузка изображений...
                    </div>
-               </div>
-           </div>
-       </div>
-            
+                    </div>
+                </div>
+            </div>
+
             <!-- Выбор базового промта -->
             <div class="card">
                 <h2>🎬 Базовые промты фильмов</h2>
@@ -87,13 +87,13 @@
                             <div class="prompt-list" id="prompt-list">
                                 <!-- Промты будут загружены через JavaScript -->
                             </div>
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="prompt-preview" id="prompt-preview">
                         <h4>Предварительный просмотр:</h4>
                         <div class="prompt-preview-content">
-                            <div class="prompt-text" id="prompt-text">
+                        <div class="prompt-text" id="prompt-text">
                                 Выберите промт из списка выше
                             </div>
                             <div class="prompt-edit-controls">
@@ -140,7 +140,7 @@
                                 <div class="content-display" id="generated-movie-description">Загрузка...</div>
                                 <textarea class="content-edit" id="generated-movie-description-edit" style="display: none;"></textarea>
                                 <div class="content-actions">
-                                    <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-description')">✏️</button>
+                                <button class="btn-small edit-btn" onclick="toggleEdit('generated-movie-description')">✏️</button>
                                     <button class="btn-small regenerate-btn" onclick="regenerateFilmDescription()" title="Регенерировать описание">🔄</button>
                                 </div>
                             </div>
@@ -190,6 +190,6 @@ P.S. Ответы анонимны.</textarea>
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=24"></script>
+    <script src="{{ url_for('static', filename='admin_app/admin_mini_app.js') }}?v=25"></script>
 </body>
 </html>

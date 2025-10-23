@@ -2085,17 +2085,33 @@ async function generateFilmDescription(filmTitle, technicalPrompt) {
         const data = await response.json();
         
         if (data.success) {
-            descriptionElement.textContent = data.description;
+            // Ограничиваем длину описания до 100 символов
+            let description = data.description.trim();
+            if (description.length > 100) {
+                description = description.substring(0, 97) + '...';
+            }
+            
+            descriptionElement.textContent = description;
             descriptionElement.style.color = '#333';
-            console.log('✅ Описание фильма сгенерировано:', data.description);
+            console.log('✅ Описание фильма сгенерировано (обрезано до 100 символов):', description);
         } else {
             console.error('Ошибка генерации описания:', data.message);
-            descriptionElement.textContent = technicalPrompt; // Fallback
+            // Fallback тоже обрезаем до 100 символов
+            let fallbackDescription = technicalPrompt.trim();
+            if (fallbackDescription.length > 100) {
+                fallbackDescription = fallbackDescription.substring(0, 97) + '...';
+            }
+            descriptionElement.textContent = fallbackDescription;
             descriptionElement.style.color = '#666';
         }
     } catch (error) {
         console.error('Ошибка генерации описания фильма:', error);
-        descriptionElement.textContent = technicalPrompt; // Fallback
+        // Fallback тоже обрезаем до 100 символов
+        let fallbackDescription = technicalPrompt.trim();
+        if (fallbackDescription.length > 100) {
+            fallbackDescription = fallbackDescription.substring(0, 97) + '...';
+        }
+        descriptionElement.textContent = fallbackDescription;
         descriptionElement.style.color = '#666';
     }
 }
