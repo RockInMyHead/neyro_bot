@@ -391,7 +391,7 @@ def admin_mixed_text():
 def smart_batches_stats():
     """Получает статистику умных батчей"""
     try:
-        stats = smart_batch_manager.get_stats()
+        stats = smart_batch_manager.get_statistics()
         return jsonify({
             'success': True,
             'stats': stats

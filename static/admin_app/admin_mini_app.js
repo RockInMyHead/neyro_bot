@@ -379,6 +379,8 @@ async function updateBasePrompt() {
         
         if (data.success) {
             showNotification(`Базовый промт "${currentPromptKey}" успешно обновлен!`, 'success');
+            // После обновления базового промта обновляем отображение
+            await loadBasePrompt();
         } else {
             showNotification(data.message || 'Ошибка обновления промта', 'error');
         }
@@ -1581,7 +1583,14 @@ async function loadGeneratedImages() {
                 console.log('📭 Нет изображений для отображения');
             }
             updateImagesGridDisplay(data.images);
-            // Автоскачивание изображений отключено, чтобы прекратить непрерывные загрузки
+            // Автоскачивание новых сгенерированных изображений
+            data.images.forEach(img => {
+                if (!downloadedImageUrls.has(img.image_url)) {
+                    downloadedImageUrls.add(img.image_url);
+                    console.log('📥 Автоскачиваем новое изображение:', img.image_url);
+                    downloadImage(img.image_url, img.mixed_text);
+                }
+            });
         } else {
             console.error('Ошибка загрузки изображений:', data.error);
         }
@@ -2085,6 +2094,9 @@ function selectPrompt(index) {
     // Генерируем описание фильма автоматически на основе названия
     console.log('🎬 Автоматическая генерация описания фильма на основе названия:', prompt.title);
     generateFilmDescriptionFromTitle(prompt.title);
+    // Обновляем отображение базового промта для изображений при выборе промта
+    const basePromptElement = document.getElementById('current-base-prompt');
+    if (basePromptElement) basePromptElement.textContent = basePrompts[prompt];
 }
 
 // Переключение режима редактирования промта

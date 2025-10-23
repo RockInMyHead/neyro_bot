@@ -142,7 +142,7 @@
       "error_message": null
     },
     {
-      "id": "9c28868a-a7f2-46aa-bcfc-50210281255c",
+      "id": "6a960eb5-3be4-4565-bcbd-3567da920104",
       "messages": [
         {
           "id": "438433e7-aa03-4db1-a17d-7842d41cbd13",
@@ -151,19 +151,7 @@
           "first_name": "Артем Михайлович Бутко",
           "content": "машина",
           "timestamp": 1761257968.34768
-        }
-      ],
-      "status": "completed",
-      "created_at": 1761258210.779728,
-      "mixed_text": "машина",
-      "image_path": "generated_images/batch_9c28868a_1761258218.png",
-      "completed_at": null,
-      "processing_time": null,
-      "error_message": null
-    },
-    {
-      "id": "00816245-a0ef-48e4-bacc-afbd60a694b4",
-      "messages": [
+        },
         {
           "id": "a64b1775-5d69-4de0-a2b5-1bf48d4a50ab",
           "user_id": 1051395584,
@@ -174,23 +162,284 @@
         }
       ],
       "status": "completed",
-      "created_at": 1761258210.7799082,
-      "mixed_text": "солнце",
-      "image_path": "generated_images/batch_00816245_1761258230.png",
+      "created_at": 1761259339.099487,
+      "mixed_text": "Машина в лучах солнца: скорость, свобода, яркий путь.",
+      "image_path": "generated_images/batch_6a960eb5_1761259349.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "5a000700-3cec-4278-a440-1000b0878376",
+      "messages": [
+        {
+          "id": "df5a8d32-582d-4abf-900c-e3cda20ede1b",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Ретин",
+          "timestamp": 1761258452.989681
+        },
+        {
+          "id": "d11e68aa-1038-4b6b-b51b-5cfb67f5fff0",
+          "user_id": 1120247107,
+          "username": "dashullikkkk",
+          "first_name": "dar!a",
+          "content": "лялялч",
+          "timestamp": 1761258462.136114
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.0995111,
+      "mixed_text": "Таинственный рассвет, магия, загадка, тайна, неведомое.🌅✨",
+      "image_path": "generated_images/batch_5a000700_1761259367.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "36e4dd3a-fa49-41a9-9865-6f2237da8e48",
+      "messages": [
+        {
+          "id": "323590ba-788d-4493-b1a1-43ae82414ec3",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Аоалаладвжч",
+          "timestamp": 1761258549.4758341
+        },
+        {
+          "id": "f5f210c2-8f06-43c0-bf84-6bde3fb55517",
+          "user_id": 1120247107,
+          "username": "dashullikkkk",
+          "first_name": "dar!a",
+          "content": "дялялчд",
+          "timestamp": 1761258567.6692228
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.09953,
+      "mixed_text": "\"Огненный закат, ледяной пейзаж, мистика, тайна, магия\"",
+      "image_path": "generated_images/batch_36e4dd3a_1761259387.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "8da7b2dc-e812-43c4-bc53-abdb22728b99",
+      "messages": [
+        {
+          "id": "8e40dcb6-dcac-447c-8353-85996f7763a7",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Ночь",
+          "timestamp": 1761258586.6624131
+        },
+        {
+          "id": "bcb7a150-8815-40eb-b4ad-e1791d909b7c",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Призраки",
+          "timestamp": 1761258615.203176
+        }
+      ],
+      "status": "generating",
+      "created_at": 1761259339.0995479,
+      "mixed_text": "Ночь. Призраки. Таинственная тьма, дрожь в воздухе, шепот ушедших душ.",
+      "image_path": null,
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "a45ab244-3383-4709-809c-be8f615dcc2e",
+      "messages": [
+        {
+          "id": "340468b7-8088-4741-865f-b9c121f1ebc4",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Пароль",
+          "timestamp": 1761258647.2598798
+        },
+        {
+          "id": "ece3361c-17cd-452a-a374-07b9ed9a563c",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Загадка",
+          "timestamp": 1761258723.745944
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.099565,
+      "mixed_text": "\"Таинственный пароль раскрывает загадку души\"",
+      "image_path": "generated_images/batch_a45ab244_1761259403.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "e94c4803-2bcf-4abb-9c24-094de82689c4",
+      "messages": [
+        {
+          "id": "4c5df6f3-f7f4-4906-8a89-819b9ee80d98",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Битва ночь",
+          "timestamp": 1761258765.715699
+        },
+        {
+          "id": "3fde2ea3-b404-4de9-a9ea-7c84e01b462e",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Адреналин и интриги",
+          "timestamp": 1761258894.481524
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.099581,
+      "mixed_text": "Сумеречный поединок: адреналин, интриги, битва, ночь, напряжение. 🌙🗡️",
+      "image_path": "generated_images/batch_e94c4803_1761259417.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "b8059843-49f1-4f91-8f94-8c7012725c67",
+      "messages": [
+        {
+          "id": "8a601c6e-05a2-4099-a485-0695a85e1d27",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Звезды войны",
+          "timestamp": 1761259068.982612
+        },
+        {
+          "id": "12da13d4-9e4a-4ed5-8b8b-3af270dc5214",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Ахпхпхпхаха",
+          "timestamp": 1761259132.55184
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.0995982,
+      "mixed_text": "\"Битва галактик, космические войны, кричащие смехопантеры\"",
+      "image_path": "generated_images/batch_b8059843_1761259436.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "f6e86831-ef9a-4d7b-b183-716399a7c728",
+      "messages": [
+        {
+          "id": "2b0c30d3-876a-490d-95e2-ebfb623d6fb1",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Любовь",
+          "timestamp": 1761259256.684405
+        },
+        {
+          "id": "f2243c19-8722-47c3-9e9f-bd2c1387df5b",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Паллады",
+          "timestamp": 1761259288.6869912
+        }
+      ],
+      "status": "generating",
+      "created_at": 1761259339.0996149,
+      "mixed_text": "Любовь Паллады: свет, красота, вечность, гармония, мудрость, благородство, искусство, вдохновение.",
+      "image_path": null,
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "117562cb-1743-4018-892f-b679b1ee41ea",
+      "messages": [
+        {
+          "id": "537ba5f4-f56f-4751-b58f-7b46df4cb44e",
+          "user_id": 331801547,
+          "username": "TRATATUSIK1",
+          "first_name": "Елена",
+          "content": "Аовоыььы",
+          "timestamp": 1761259291.321561
+        },
+        {
+          "id": "c29d8c57-c7e7-4191-91c2-cfa1efbec619",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "Дала",
+          "timestamp": 1761259332.25705
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.099631,
+      "mixed_text": "\"Таинственный лес, мистика, тайна, загадка\"",
+      "image_path": "generated_images/batch_117562cb_1761259457.png",
+      "completed_at": null,
+      "processing_time": null,
+      "error_message": null
+    },
+    {
+      "id": "721615d0-aad3-4ea5-924e-9aff4f26c0a3",
+      "messages": [
+        {
+          "id": "357bf2cf-d157-4fa9-a869-d247b10abe68",
+          "user_id": 1051395584,
+          "username": "hey_bebebe",
+          "first_name": "Артем Михайлович Бутко",
+          "content": "Далалалал",
+          "timestamp": 1761259338.981418
+        }
+      ],
+      "status": "completed",
+      "created_at": 1761259339.099648,
+      "mixed_text": "Далалалал",
+      "image_path": "generated_images/batch_721615d0_1761259471.png",
       "completed_at": null,
       "processing_time": null,
       "error_message": null
     }
   ],
   "processed_message_ids": [
-    "2cfc6efa-17b0-45f6-8503-e08f75078ab1",
     "258b36e2-2b04-40f0-aafa-6305894e35b7",
+    "df5a8d32-582d-4abf-900c-e3cda20ede1b",
     "85312da5-3996-4e7a-82bf-5844d6c7b66f",
-    "d730ca7c-bcfd-4500-bfb2-97270c9dc757",
     "438433e7-aa03-4db1-a17d-7842d41cbd13",
     "dbb1705c-49ea-4357-833b-94be1421f590",
-    "76255847-f523-43e2-a02f-e00e0c2551d8",
+    "d11e68aa-1038-4b6b-b51b-5cfb67f5fff0",
     "a64b1775-5d69-4de0-a2b5-1bf48d4a50ab",
+    "537ba5f4-f56f-4751-b58f-7b46df4cb44e",
+    "8e40dcb6-dcac-447c-8353-85996f7763a7",
+    "f2243c19-8722-47c3-9e9f-bd2c1387df5b",
+    "8a601c6e-05a2-4099-a485-0695a85e1d27",
+    "bcb7a150-8815-40eb-b4ad-e1791d909b7c",
+    "f5f210c2-8f06-43c0-bf84-6bde3fb55517",
+    "4c5df6f3-f7f4-4906-8a89-819b9ee80d98",
+    "d730ca7c-bcfd-4500-bfb2-97270c9dc757",
+    "c29d8c57-c7e7-4191-91c2-cfa1efbec619",
+    "357bf2cf-d157-4fa9-a869-d247b10abe68",
+    "12da13d4-9e4a-4ed5-8b8b-3af270dc5214",
+    "2b0c30d3-876a-490d-95e2-ebfb623d6fb1",
+    "76255847-f523-43e2-a02f-e00e0c2551d8",
+    "2cfc6efa-17b0-45f6-8503-e08f75078ab1",
+    "323590ba-788d-4493-b1a1-43ae82414ec3",
+    "340468b7-8088-4741-865f-b9c121f1ebc4",
+    "ece3361c-17cd-452a-a374-07b9ed9a563c",
+    "3fde2ea3-b404-4de9-a9ea-7c84e01b462e",
     "33aff3ae-6eb1-4288-b764-8da48a92df44"
   ]
 }
