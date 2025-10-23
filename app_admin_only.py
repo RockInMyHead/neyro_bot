@@ -110,7 +110,7 @@ def auto_generation_worker():
             if created_batches:
                 logger.info(f"📦 Создано {len(created_batches)} новых батчей")
             
-            # Получаем следующий батч для обработки
+            # Проверяем, есть ли батчи для обработки
             next_batch = smart_batch_manager.get_next_batch()
             
             if not next_batch:
@@ -119,13 +119,16 @@ def auto_generation_worker():
             
             logger.info(f"🔄 Обрабатываем батч {next_batch.id} с {next_batch.message_count} сообщениями")
             
-            # Обрабатываем батч через sequential_processor
-            result = sequential_processor.process_batch(next_batch)
+            # Обрабатываем батч через sequential_processor (асинхронно)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(sequential_processor.process_next_batch())
+            loop.close()
             
             if result:
-                logger.info(f"✅ Батч {next_batch.id} успешно обработан")
+                logger.info(f"✅ Батч успешно обработан")
             else:
-                logger.warning(f"⚠️ Батч {next_batch.id} не был обработан")
+                logger.warning(f"⚠️ Батч не был обработан")
             
             # Небольшая пауза между циклами
             time.sleep(2)
