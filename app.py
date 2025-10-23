@@ -950,6 +950,7 @@ def get_latest_message():
         logger.info(f"🔍 Источники сообщений: {set(sources)}")
         
         if admin_messages:
+            # Сортируем сообщения по времени и берем самое новое
             latest_message = max(admin_messages, key=lambda x: x.get('timestamp', 0))
             logger.info(f"✅ Найдено последнее сообщение от админа: {latest_message.get('message', '')[:50]}...")
             
@@ -957,6 +958,26 @@ def get_latest_message():
             global last_admin_message_time
             message_time = latest_message.get('timestamp', 0)
             is_recent = (time.time() - message_time) < 30  # Сообщение отправлено менее 30 секунд назад
+            
+            # Дополнительная проверка: если есть несколько одинаковых сообщений, берем только одно
+            message_content = latest_message.get('message', '').strip()
+            if message_content:
+                # Проверяем, есть ли дублирующиеся сообщения с тем же содержимым
+                duplicate_messages = [
+                    msg for msg in admin_messages 
+                    if msg.get('message', '').strip() == message_content and msg.get('timestamp', 0) != message_time
+                ]
+                
+                if duplicate_messages:
+                    logger.info(f"🔍 Найдено {len(duplicate_messages)} дублирующихся сообщений с тем же содержимым")
+                    # Очищаем дублирующиеся сообщения
+                    message_db.messages = [msg for msg in message_db.messages if not (
+                        msg.get('source') == 'admin' and 
+                        msg.get('message', '').strip() == message_content and 
+                        msg.get('timestamp', 0) != message_time
+                    )]
+                    message_db.save_messages()
+                    logger.info("🧹 Дублирующиеся админские сообщения очищены")
             
             return jsonify({
                 "success": True,
@@ -1098,22 +1119,38 @@ P.S. Ответы анонимны."""
         except Exception as e:
             logger.error(f"Ошибка при отправке концертного сообщения: {e}")
         
-        # Save admin message to DB
+        # Save admin message to DB (с проверкой на дублирование)
         try:
-            logger.info(f"💾 Сохраняем админское сообщение в БД: {message[:100]}...")
-            message_db.add_message(
-                user_id=0,
-                username='Admin',
-                first_name='Admin',
-                message=message,
-                source='admin'
-            )
-            logger.info("✅ Админское сообщение успешно сохранено в БД")
+            logger.info(f"💾 Проверяем, нужно ли сохранять админское сообщение в БД...")
             
-            # Устанавливаем флаг для немедленной доставки
-            global last_admin_message_time
-            last_admin_message_time = time.time()
-            logger.info("🚀 Установлен флаг немедленной доставки сообщения")
+            # Проверяем, не было ли уже сохранено такое же сообщение недавно (в течение 30 секунд)
+            message_db.load_messages()
+            current_time = time.time()
+            recent_admin_messages = [
+                msg for msg in message_db.messages 
+                if (msg.get('source') == 'admin' and 
+                    current_time - msg.get('timestamp', 0) < 30 and
+                    msg.get('message', '').strip() == message.strip())
+            ]
+            
+            if recent_admin_messages:
+                logger.info(f"⚠️ Найдено {len(recent_admin_messages)} дублирующихся админских сообщений за последние 30 секунд")
+                logger.info("🔄 Пропускаем сохранение дублирующегося сообщения")
+            else:
+                logger.info(f"💾 Сохраняем новое админское сообщение в БД: {message[:100]}...")
+                message_db.add_message(
+                    user_id=0,
+                    username='Admin',
+                    first_name='Admin',
+                    message=message,
+                    source='admin'
+                )
+                logger.info("✅ Админское сообщение успешно сохранено в БД")
+                
+                # Устанавливаем флаг для немедленной доставки
+                global last_admin_message_time
+                last_admin_message_time = time.time()
+                logger.info("🚀 Установлен флаг немедленной доставки сообщения")
             
         except Exception as e:
             logger.error(f"❌ Не удалось сохранить админское сообщение: {e}")

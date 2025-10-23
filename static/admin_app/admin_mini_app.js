@@ -1015,8 +1015,28 @@ async function generateAIComment() {
 
 // ===== ФУНКЦИИ УПРАВЛЕНИЯ КОНЦЕРТОМ =====
 
+// Переменная для предотвращения множественных отправок
+let isSendingMessage = false;
+
 async function sendTrackMessage() {
     console.log('sendTrackMessage вызвана');
+    
+    // Проверяем, не идет ли уже отправка сообщения
+    if (isSendingMessage) {
+        console.log('⚠️ Сообщение уже отправляется, пропускаем дублирующий запрос');
+        showNotification('Сообщение уже отправляется, пожалуйста, подождите...', 'warning');
+        return;
+    }
+    
+    // Устанавливаем флаг отправки
+    isSendingMessage = true;
+    
+    // Отключаем кнопку отправки
+    const sendButton = document.querySelector('button[onclick="sendTrackMessage()"]');
+    if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.textContent = '⏳ Отправка...';
+    }
     
     const movieTitle = document.getElementById('current-prompt-title');
     const movieDescription = document.getElementById('generated-movie-description');
@@ -1106,6 +1126,17 @@ ${descriptionValue}
     } catch (error) {
         console.error('Ошибка отправки сообщения перед треком:', error);
         showNotification('Ошибка отправки сообщения', 'error');
+    } finally {
+        // Сбрасываем флаг отправки
+        isSendingMessage = false;
+        console.log('🔄 Флаг отправки сброшен');
+        
+        // Восстанавливаем кнопку отправки
+        const sendButton = document.querySelector('button[onclick="sendTrackMessage()"]');
+        if (sendButton) {
+            sendButton.disabled = false;
+            sendButton.textContent = '🎵 Отправить сообщение перед треком';
+        }
     }
 }
 
