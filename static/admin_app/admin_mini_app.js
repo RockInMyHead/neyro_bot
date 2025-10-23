@@ -199,11 +199,6 @@ async function exportData() {
 }
 
 // Форматирование времени
-function formatTime(timestamp) {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
 // Показ уведомлений
 function showNotification(message, type = 'info') {
     // Создаем элемент уведомления
