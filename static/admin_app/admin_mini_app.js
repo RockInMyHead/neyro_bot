@@ -368,30 +368,6 @@ async function updateBasePrompt() {
 }
 
 // Функция для перехода к следующему промту
-function nextPrompt() {
-    if (promptQueue.length === 0) {
-        showNotification('Очередь промтов пуста', 'warning');
-        return;
-    }
-    
-    // Перемещаем текущий промт в конец очереди
-    const currentPrompt = promptQueue[legacyPromptIndex];
-    promptQueue.splice(legacyPromptIndex, 1);
-    promptQueue.push(currentPrompt);
-    
-    // Обновляем индекс (остается 0, так как следующий промт теперь первый)
-    legacyPromptIndex = 0;
-    
-    // Обновляем отображение
-    loadPromptList();
-    updatePromptPreview();
-    
-    showNotification(`Переход к следующему промту: ${basePrompts[promptQueue[0]]?.split('\n')[0] || 'Неизвестный промт'}`, 'success');
-    
-    // Автоматически генерируем концертный контент для нового промта
-    generateConcertContent();
-}
-
 // Функция для обновления предварительного просмотра промта
 function updatePromptPreview() {
     const promptText = document.getElementById('prompt-text');
@@ -1984,8 +1960,6 @@ function selectPrompt(index) {
     
     // Генерируем красивое описание фильма через LLM
     generateFilmDescription(prompt.title, prompt.description);
-    
-    togglePromptDropdown();
 }
 
 // Переключение режима редактирования промта
