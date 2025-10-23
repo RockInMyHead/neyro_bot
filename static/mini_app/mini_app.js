@@ -368,18 +368,20 @@ function addMessageToChat(message, isUser = false, timestamp = null) {
     const chatMessages = document.getElementById('chat-messages');
     
     // Проверяем, является ли это сообщением об очистке чата
-    if (!isUser && message.includes('История чата была очищена администратором')) {
+    if (!isUser && (message.includes('История чата была очищена администратором') || 
+                   message.includes('История чатов успешно очищена'))) {
         console.log('🔄 Получено сообщение об очистке чата, очищаем localStorage');
-        // Очищаем localStorage
-        localStorage.removeItem('mini_app_chat_history');
-        localStorage.removeItem('mini_app_user_data');
-        // Очищаем текущий чат
-        chatHistory = [];
-        chatMessages.innerHTML = '';
+        
+        // Используем улучшенную функцию очистки
+        clearLocalChat();
+        
         // Показываем уведомление
-        alert('🔄 История чата была очищена администратором. Страница будет обновлена.');
-        // Обновляем страницу
-        window.location.reload();
+        showNotification('🔄 История чата была очищена администратором');
+        
+        // Обновляем страницу через 2 секунды
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
         return;
     }
     
@@ -732,6 +734,9 @@ function initChat() {
         // Изначально отключаем блок ввода до первого ответа от бота
         disableChatInput();
         
+        // Сначала проверяем статус очистки чата
+        initClearCheck();
+        
         // Загружаем историю чата из localStorage
         const chatLoaded = loadChatFromStorage();
         if (chatLoaded && chatHistory.length > 0) {
@@ -809,14 +814,17 @@ function initClearCheck() {
                 lastClearCheck = data.clear_timestamp;
                 console.log('🔍 Инициализирован lastClearCheck:', lastClearCheck);
                 
-                // Если чат был очищен недавно (в течение последних 5 минут), 
+                // Если чат был очищен недавно (в течение последних 10 минут), 
                 // принудительно очищаем локальный чат
                 const now = Date.now();
-                const fiveMinutesAgo = now - (5 * 60 * 1000);
+                const tenMinutesAgo = now - (10 * 60 * 1000);
                 
-                if (data.clear_timestamp > fiveMinutesAgo) {
+                if (data.clear_timestamp > tenMinutesAgo) {
                     console.log('🔄 Обнаружена недавняя очистка чата, принудительно очищаем локальный чат');
                     clearLocalChat();
+                    
+                    // Показываем уведомление пользователю
+                    showNotification('🔄 История чата была очищена администратором');
                 }
             }
         })
@@ -829,18 +837,30 @@ function initClearCheck() {
 function clearLocalChat() {
     console.log('🔄 Очистка локального чата');
     
-    // Очищаем localStorage
+    // Очищаем все возможные ключи localStorage
+    localStorage.removeItem('neuroevent_chat');
     localStorage.removeItem('mini_app_chat_history');
     localStorage.removeItem('mini_app_user_data');
+    localStorage.removeItem('chat_history');
+    localStorage.removeItem('user_data');
     
     // Очищаем текущий чат
     chatHistory = [];
     const chatMessages = document.getElementById('chat-messages');
     if (chatMessages) {
+        // Оставляем только первое приветственное сообщение
+        const welcomeMessage = chatMessages.querySelector('.message:first-child');
         chatMessages.innerHTML = '';
+        if (welcomeMessage) {
+            chatMessages.appendChild(welcomeMessage);
+        }
     }
     
-    console.log('✅ Локальный чат очищен');
+    // Сбрасываем флаги состояния
+    isWaitingForAdminMessage = false;
+    lastMessageTimestamp = 0;
+    
+    console.log('✅ Локальный чат полностью очищен');
 }
 async function checkChatClearStatus() {
     try {
@@ -860,10 +880,12 @@ async function checkChatClearStatus() {
                 clearLocalChat();
                 
                 // Показываем уведомление
-                alert('🔄 История чата была очищена администратором. Страница будет обновлена.');
+                showNotification('🔄 История чата была очищена администратором');
                 
-                // Обновляем страницу
-                window.location.reload();
+                // Не перезагружаем страницу сразу, даем пользователю время прочитать уведомление
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
             } else {
                 console.log('🔍 Очистка чата уже была обработана ранее');
             }
