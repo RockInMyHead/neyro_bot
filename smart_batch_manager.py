@@ -93,7 +93,10 @@ class SmartBatchManager:
                         'status': batch.status.value,
                         'created_at': batch.created_at,
                         'mixed_text': batch.mixed_text,
-                        'generated_images': batch.generated_images
+                        'image_path': batch.image_path,
+                        'completed_at': batch.completed_at,
+                        'processing_time': batch.processing_time,
+                        'error_message': batch.error_message
                     }
                     for batch in self.batches
                 ],
@@ -149,7 +152,10 @@ class SmartBatchManager:
                     status=BatchStatus(batch['status']),
                     created_at=batch['created_at'],
                     mixed_text=batch.get('mixed_text'),
-                    generated_images=batch.get('generated_images')
+                    image_path=batch.get('image_path'),
+                    completed_at=batch.get('completed_at'),
+                    processing_time=batch.get('processing_time'),
+                    error_message=batch.get('error_message')
                 )
                 for batch in data.get('batches', [])
             ]
