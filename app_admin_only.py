@@ -704,38 +704,35 @@ def admin_send_concert_message():
         
         # Отправляем сообщение всем пользователям Telegram
         try:
-            message_db.load_messages()
-            all_messages = message_db.messages
-            
-            # Получаем уникальных пользователей из Telegram
+            # Загружаем реестр пользователей
             telegram_users = set()
-            for msg in all_messages:
-                if msg.get('source') == 'telegram' and msg.get('user_id') is not None:
-                    telegram_users.add(msg['user_id'])
             
-            logger.info(f"📊 Найдено {len(telegram_users)} пользователей Telegram для отправки сообщения")
-            logger.info(f"👥 ID пользователей: {list(telegram_users)}")
+            # Сначала пытаемся загрузить из user_registry.json
+            registry_file = 'user_registry.json'
+            if os.path.exists(registry_file):
+                try:
+                    with open(registry_file, 'r', encoding='utf-8') as f:
+                        registry = json.load(f)
+                        for user_data in registry.get('users', []):
+                            telegram_users.add(user_data['user_id'])
+                    logger.info(f"📊 Загружено {len(telegram_users)} пользователей из реестра")
+                except Exception as e:
+                    logger.error(f"❌ Ошибка чтения реестра пользователей: {e}")
             
-            # Если нет пользователей, попробуем найти в других источниках
+            # Если нет пользователей в реестре, пытаемся найти в базе сообщений
             if not telegram_users:
-                logger.warning("⚠️ Не найдено пользователей Telegram в базе данных")
-                logger.info("🔍 Попробуем найти пользователей в других источниках...")
+                logger.warning("⚠️ Реестр пользователей пуст, ищем в базе сообщений...")
+                message_db.load_messages()
+                all_messages = message_db.messages
                 
-                # Ищем пользователей из enhanced_bot
+                # Ищем всех пользователей (не только с source='telegram')
                 for msg in all_messages:
                     if msg.get('user_id') is not None and msg.get('user_id') != 0:
                         telegram_users.add(msg['user_id'])
-                        logger.info(f"👤 Найден пользователь из другого источника: {msg['user_id']}")
                 
-                # Если все еще нет пользователей, добавим тестового пользователя
-                if not telegram_users:
-                    logger.warning("⚠️ Все еще нет пользователей, добавляем тестового пользователя")
-                    # Добавляем тестового пользователя (замените на реальный ID)
-                    test_user_id = 123456789  # Замените на реальный ID пользователя
-                    telegram_users.add(test_user_id)
-                    logger.info(f"🧪 Добавлен тестовый пользователь: {test_user_id}")
-                
-                logger.info(f"📊 Итого найдено {len(telegram_users)} пользователей")
+                logger.info(f"📊 Найдено {len(telegram_users)} пользователей в базе сообщений")
+            
+            logger.info(f"👥 ID пользователей для отправки: {list(telegram_users)}")
             
             sent_count = 0
             for user_id in telegram_users:
@@ -1059,8 +1056,34 @@ def generate_custom_image():
             # Создаем папку если не существует
             os.makedirs(GENERATED_IMAGES_FOLDER, exist_ok=True)
             
-            # Генерируем изображение
-            image_path = generate_image_with_retry(full_prompt)
+            # Генерируем изображение (асинхронная функция)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            image_base64 = loop.run_until_complete(generate_image_with_retry(full_prompt))
+            loop.close()
+            
+            logger.info(f"🖼️ Получена base64-строка изображения: {len(image_base64) if image_base64 else 0} символов")
+            
+            if image_base64:
+                # Сохраняем base64 в файл
+                import base64
+                from datetime import datetime
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"custom_{timestamp}.png"
+                image_path = os.path.join(GENERATED_IMAGES_FOLDER, filename)
+                
+                # Декодируем и сохраняем
+                try:
+                    image_data = base64.b64decode(image_base64)
+                    with open(image_path, 'wb') as f:
+                        f.write(image_data)
+                    logger.info(f"✅ Изображение сохранено: {image_path}")
+                except Exception as e:
+                    logger.error(f"❌ Ошибка сохранения изображения: {e}")
+                    return jsonify({'success': False, 'error': f'Ошибка сохранения: {str(e)}'})
+            else:
+                return jsonify({'success': False, 'error': 'Пустая base64-строка'})
             
             if image_path and os.path.exists(image_path):
                 # Обрабатываем изображение с помощью PIL (как в умной системе батчей)

@@ -56,11 +56,50 @@ def get_user_state(user_id):
         user_states[user_id] = UserState(user_id)
     return user_states[user_id]
 
+# Функция для сохранения пользователя в реестр
+def save_user_to_registry(user_id, username, first_name):
+    """Сохраняет пользователя в реестр для рассылок"""
+    import json
+    import os
+    
+    registry_file = 'user_registry.json'
+    
+    try:
+        # Загружаем существующий реестр
+        if os.path.exists(registry_file):
+            with open(registry_file, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+        else:
+            registry = {'users': []}
+        
+        # Проверяем, есть ли уже такой пользователь
+        existing_user = next((u for u in registry['users'] if u['user_id'] == user_id), None)
+        
+        if not existing_user:
+            # Добавляем нового пользователя
+            registry['users'].append({
+                'user_id': user_id,
+                'username': username or f'user_{user_id}',
+                'first_name': first_name or 'User',
+                'registered_at': time.time()
+            })
+            
+            # Сохраняем реестр
+            with open(registry_file, 'w', encoding='utf-8') as f:
+                json.dump(registry, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"✅ Пользователь {user_id} добавлен в реестр")
+    except Exception as e:
+        logger.error(f"❌ Ошибка сохранения пользователя в реестр: {e}")
+
 # Обработчик команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Отправляет приветственное сообщение при команде /start"""
     user = update.effective_user
     user_state = get_user_state(user.id)
+    
+    # Сохраняем пользователя в реестр для рассылок
+    save_user_to_registry(user.id, user.username, user.first_name)
     
     # Убираем кнопки - используем только текстовые сообщения
     reply_markup = None
@@ -216,6 +255,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     # Выводим сообщение пользователя в консоль
     print(f"📨 Получено сообщение от {user.first_name} (ID: {user.id}): {user_message}")
+    
+    # Сохраняем пользователя в реестр (для рассылок)
+    save_user_to_registry(user.id, user.username, user.first_name)
     
     # Добавляем сообщение в историю пользователя (локально)
     user_state.add_message(user_message, is_user=True)
