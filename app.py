@@ -158,6 +158,36 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'neuroevent_admin_secret_key_2024
 # Enable CORS for API routes
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
+# Глобальная обработка ошибок UnicodeDecodeError
+@app.errorhandler(UnicodeDecodeError)
+def handle_unicode_error(e):
+    logger.error(f"UnicodeDecodeError: {e}")
+    return jsonify({
+        'success': False, 
+        'error': 'Character encoding error',
+        'message': 'Invalid character encoding detected'
+    }), 400
+
+# Глобальная обработка ошибок кодировки
+@app.errorhandler(UnicodeError)
+def handle_unicode_error_general(e):
+    logger.error(f"UnicodeError: {e}")
+    return jsonify({
+        'success': False, 
+        'error': 'Unicode error',
+        'message': 'Text encoding issue detected'
+    }), 400
+
+# Обработка общих ошибок
+@app.errorhandler(Exception)
+def handle_general_error(e):
+    logger.error(f"Unhandled exception: {e}")
+    return jsonify({
+        'success': False, 
+        'error': 'Internal server error',
+        'message': 'An unexpected error occurred'
+    }), 500
+
 # Декоратор для проверки аутентификации администратора
 def require_admin_auth(f):
     def decorated_function(*args, **kwargs):
@@ -214,11 +244,39 @@ def api_message():
         response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         return response
-    data = request.get_json()
-    message = data.get('message', '').strip()
-    user_id = data.get('user_id', 0)
-    username = data.get('username', 'MiniApp')
-    first_name = data.get('first_name', 'MiniApp')
+    # Безопасная обработка JSON данных
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+    except Exception as e:
+        logger.error(f"Ошибка парсинга JSON: {e}")
+        return jsonify({'success': False, 'error': 'Invalid JSON format'}), 400
+    
+    # Безопасная обработка данных с проверкой кодировки
+    try:
+        message = data.get('message', '').strip()
+        # Проверяем и исправляем кодировку сообщения
+        if isinstance(message, str):
+            # Удаляем недопустимые символы Unicode
+            message = message.encode('utf-8', errors='ignore').decode('utf-8')
+        
+        user_id = data.get('user_id', 0)
+        username = data.get('username', 'MiniApp')
+        first_name = data.get('first_name', 'MiniApp')
+        
+        # Безопасная обработка строковых полей
+        if isinstance(username, str):
+            username = username.encode('utf-8', errors='ignore').decode('utf-8')
+        if isinstance(first_name, str):
+            first_name = first_name.encode('utf-8', errors='ignore').decode('utf-8')
+            
+    except UnicodeDecodeError as e:
+        logger.error(f"UnicodeDecodeError в api_message: {e}")
+        return jsonify({'success': False, 'error': 'Invalid character encoding'}), 400
+    except Exception as e:
+        logger.error(f"Ошибка обработки данных в api_message: {e}")
+        return jsonify({'success': False, 'error': 'Data processing error'}), 400
     
     # Сохраняем сообщение Mini App в базу
     try:
@@ -266,10 +324,26 @@ def api_message():
     return response
 
 # Alias endpoint for compatibility
-@app.route('/api/chat', methods=['POST', 'OPTIONS'])
+@app.route('/api/chat', methods=['GET', 'POST', 'OPTIONS'])
 def api_chat():
-    """Alias for /api/message"""
-    return api_message()
+    """Alias for /api/message - supports both GET and POST"""
+    if request.method == 'GET':
+        # GET request - return chat history or status
+        user_id = request.args.get('user_id', 0)
+        try:
+            # Return basic chat status
+            return jsonify({
+                'success': True,
+                'user_id': user_id,
+                'message': 'Chat endpoint active',
+                'timestamp': int(time.time() * 1000)
+            })
+        except Exception as e:
+            logger.error(f"Error in GET /api/chat: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    else:
+        # POST request - process message
+        return api_message()
 
 # Admin stats endpoint
 @app.route('/api/admin/stats', methods=['GET'])

@@ -32,10 +32,26 @@ def _read_prompt_from_file():
         return _get_default_prompt()
 
 def _write_prompt_to_file(prompt: str):
-    """Записывает промт в файл"""
+    """Записывает промт в файл с безопасной обработкой кодировки"""
     try:
+        # Безопасная обработка промта
+        if isinstance(prompt, str):
+            # Удаляем недопустимые символы Unicode
+            safe_prompt = prompt.encode('utf-8', errors='ignore').decode('utf-8')
+        else:
+            safe_prompt = str(prompt)
+        
         with open(PROMPT_FILE, 'w', encoding='utf-8') as f:
-            f.write(prompt)
+            f.write(safe_prompt)
+    except UnicodeDecodeError as e:
+        logger.error(f"UnicodeDecodeError при записи промта: {e}")
+        # Записываем безопасную версию
+        try:
+            safe_prompt = "Базовый промт с проблемами кодировки"
+            with open(PROMPT_FILE, 'w', encoding='utf-8') as f:
+                f.write(safe_prompt)
+        except Exception as e2:
+            logger.error(f"Критическая ошибка записи промта: {e2}")
     except Exception as e:
         logger.error(f"Ошибка записи промта в файл: {e}")
 

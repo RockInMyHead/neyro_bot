@@ -34,20 +34,43 @@ class SimpleMessageDB:
             print(f"Ошибка сохранения сообщений: {e}")
     
     def add_message(self, user_id: int, username: str, first_name: str, message: str, source: str):
-        """Добавляет новое сообщение"""
-        message_data = {
-            'user_id': user_id,
-            'username': username,
-            'first_name': first_name,
-            'message': message,
-            'timestamp': time.time(),
-            'source': source
-        }
-        
-        self.messages.append(message_data)
-        self.save_messages()
-        
-        print(f"✅ Сообщение добавлено в БД: {first_name} ({source}): {message[:30]}...")
+        """Добавляет новое сообщение с безопасной обработкой кодировки"""
+        try:
+            # Безопасная обработка строковых данных
+            def safe_encode(text):
+                if isinstance(text, str):
+                    return text.encode('utf-8', errors='ignore').decode('utf-8')
+                return str(text)
+            
+            message_data = {
+                'user_id': user_id,
+                'username': safe_encode(username),
+                'first_name': safe_encode(first_name),
+                'message': safe_encode(message),
+                'timestamp': time.time(),
+                'source': safe_encode(source)
+            }
+            
+            self.messages.append(message_data)
+            self.save_messages()
+            
+            print(f"✅ Сообщение добавлено в БД: {safe_encode(first_name)} ({source}): {safe_encode(message)[:30]}...")
+            
+        except UnicodeDecodeError as e:
+            print(f"❌ UnicodeDecodeError при добавлении сообщения: {e}")
+            # Добавляем сообщение с безопасными значениями
+            safe_message_data = {
+                'user_id': user_id,
+                'username': 'user',
+                'first_name': 'User',
+                'message': 'Message with encoding issues',
+                'timestamp': time.time(),
+                'source': source
+            }
+            self.messages.append(safe_message_data)
+            self.save_messages()
+        except Exception as e:
+            print(f"❌ Ошибка при добавлении сообщения: {e}")
     
     def get_stats(self):
         """Возвращает статистику"""

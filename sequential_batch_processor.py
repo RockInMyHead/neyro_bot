@@ -269,9 +269,21 @@ class SequentialBatchProcessor:
             logger.warning("⚠️ mixed_text is None, using fallback")
             mixed_text = "морской пейзаж, приключения, тайна"
         
-        # Получаем текущий базовый промт из админ-панели
+        # Получаем текущий базовый промт из админ-панели с безопасной обработкой
         try:
-            style_addition = f" {get_current_base_prompt()}"
+            base_prompt = get_current_base_prompt()
+            # Безопасная обработка промта
+            if isinstance(base_prompt, str):
+                # Удаляем недопустимые символы Unicode
+                safe_base_prompt = base_prompt.encode('utf-8', errors='ignore').decode('utf-8')
+            else:
+                safe_base_prompt = str(base_prompt)
+            
+            style_addition = f" {safe_base_prompt}"
+        except UnicodeDecodeError as e:
+            logger.error(f"UnicodeDecodeError при получении базового промта: {e}")
+            # Fallback на безопасный стиль
+            style_addition = " Кинематографичный стиль; широкий план, масштаб, без крупных лиц."
         except Exception as e:
             logger.warning(f"⚠️ Не удалось получить базовый промт: {e}, используем fallback")
             # Fallback на оригинальный стиль
@@ -282,7 +294,17 @@ class SequentialBatchProcessor:
                 "камень, рваная парусина, брызги; широкий план, масштаб, без крупных лиц."
             )
         
-        full_prompt = f"Создай художественное изображение: {mixed_text}{style_addition}"
+        # Безопасная обработка mixed_text
+        try:
+            if isinstance(mixed_text, str):
+                safe_mixed_text = mixed_text.encode('utf-8', errors='ignore').decode('utf-8')
+            else:
+                safe_mixed_text = str(mixed_text)
+        except UnicodeDecodeError as e:
+            logger.error(f"UnicodeDecodeError в mixed_text: {e}")
+            safe_mixed_text = "Пользовательское сообщение"
+        
+        full_prompt = f"Создай художественное изображение: {safe_mixed_text}{style_addition}"
         
         # Ограничиваем длину промпта
         max_prompt_length = 500
