@@ -1354,25 +1354,9 @@ def check_admin_auth():
         logger.error(f"Ошибка проверки аутентификации: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-# Запуск сервера
-if __name__ == '__main__':
-    # Debug: print registered routes
-    print('Registered routes:')
-    for rule in app.url_map.iter_rules():
-        print(f"{rule.endpoint}: {rule}")
-    
-    # Запускаем фоновый поток для автоматической генерации изображений
-    auto_thread = threading.Thread(target=auto_generation_worker, daemon=True)
-    auto_thread.start()
-    logger.info("🚀 Фоновый поток автоматической генерации запущен")
-    
-    port = int(os.getenv('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=True)
-
 # ===== API ENDPOINTS ДЛЯ ГЕНЕРАЦИИ ИЗОБРАЖЕНИЙ =====
 
 @app.route('/api/admin/get-base-prompt', methods=['GET'])
-@require_admin_auth
 def get_base_prompt():
     """Получает текущий базовый промт"""
     try:
@@ -1460,5 +1444,17 @@ def generate_custom_image():
         logger.error(f"Ошибка генерации изображения: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+# Запуск сервера
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    # Debug: print registered routes
+    print('Registered routes:')
+    for rule in app.url_map.iter_rules():
+        print(f"{rule.endpoint}: {rule}")
+    
+    # Запускаем фоновый поток для автоматической генерации изображений
+    auto_thread = threading.Thread(target=auto_generation_worker, daemon=True)
+    auto_thread.start()
+    logger.info("🚀 Фоновый поток автоматической генерации запущен")
+    
+    port = int(os.getenv('PORT', 8000))
+    app.run(host='0.0.0.0', port=port, debug=True)
