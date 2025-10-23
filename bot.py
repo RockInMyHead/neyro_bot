@@ -220,11 +220,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logger.error(f"Error processing message: {e}")
         print(f"❌ Ошибка при обработке сообщения: {e}")
         # Fallback ответ в случае ошибки
-        fallback_response = (
-            f"Привет, {user.first_name}! 👋\n\n"
-            "Я получил ваше сообщение, но сейчас у меня технические проблемы. "
-            "Попробуйте написать мне позже! 😊"
-        )
+        from mock_responses import get_fallback_response
+        fallback_response = get_fallback_response(user.first_name)
         await update.message.reply_text(fallback_response)
 
 # Обработчик нажатий на кнопки

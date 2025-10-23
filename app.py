@@ -311,7 +311,8 @@ def api_message():
         loop.close()
     except RuntimeError as e:
         logger.error(f"Ошибка event loop в api_message: {e}")
-        ai_response = "Извините, произошла ошибка при обработке сообщения."
+        from mock_responses import get_friendly_response
+        ai_response = get_friendly_response()
     
     response_data = {
         'success': True,

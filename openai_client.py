@@ -94,19 +94,23 @@ async def get_openai_response(user_message: str, conversation_history: list = No
         
     except openai.APIError as e:
         logger.error(f"OpenAI API error: {e}")
-        return "Извините, произошла ошибка при обращении к AI. Попробуйте позже. 😔"
+        from mock_responses import get_friendly_response
+        return get_friendly_response()
     
     except openai.RateLimitError as e:
         logger.error(f"OpenAI rate limit error: {e}")
-        return "Слишком много запросов. Подождите немного и попробуйте снова. ⏰"
+        from mock_responses import get_friendly_response
+        return get_friendly_response()
     
     except openai.APIConnectionError as e:
         logger.error(f"OpenAI connection error: {e}")
-        return "Проблемы с подключением к AI. Проверьте интернет-соединение. 🌐"
+        from mock_responses import get_friendly_response
+        return get_friendly_response()
     
     except Exception as e:
         logger.error(f"Unexpected error in OpenAI client: {e}")
-        return "Произошла неожиданная ошибка. Попробуйте позже. 🔧"
+        from mock_responses import get_friendly_response
+        return get_friendly_response()
 
 def test_openai_connection() -> bool:
     """
